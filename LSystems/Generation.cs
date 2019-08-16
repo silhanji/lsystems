@@ -18,6 +18,10 @@ namespace LSystems
 			Modules = modules ?? throw new ArgumentException("modules cannot be null");
 			Age = age;
 		}
+		
+		public Module<T> this[int index] => Modules[index];
+		
+		public int Count => Modules.Count;
 	}
 
 	/// <summary>
@@ -30,6 +34,10 @@ namespace LSystems
 		public readonly int Index;
 
 		public Module<T> Module => Generation.Modules[Index];
+
+		public Module<T> this[int index] => Generation.Modules[index];
+		
+		public int Count => Generation.Modules.Count;
 		
 		public GenerationIndex(Generation<T> data, int index)
 		{
