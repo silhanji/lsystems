@@ -15,9 +15,9 @@ namespace LSystemsTests.ParsersTests
 			new string[0], 
 			new []{"2", "+", "3"})]
 		[TestCase(
-			"2*41+-8",
+			"2*41-8",
 			new string[0],
-			new []{"2", "*", "41", "+", "-", "8"})]
+			new []{"2", "*", "41", "-", "8"})]
 		[TestCase(
 			"-15+(x/8)-y",
 			new []{"x", "y"},
@@ -37,21 +37,6 @@ namespace LSystemsTests.ParsersTests
 			var output = expressionParser.Atomize(input);
 			
 			Assert.That(output, Is.EqualTo(expectedOutput));
-		}
-
-		[TestCase(
-			"#", 
-			new string[0])]
-		[TestCase(
-			"3+4%5",
-			new string[0])]
-		public void ExpressionParser_Atomize_ExceptionTest(string input, string[] variableNames)
-		{
-			//Can't test method from ExpressionParser directly as ExpressionParser is abstract class
-			//Testing BasicIntExpressionParser as it uses method from ExpressionParser
-			ExpressionParser<int> expressionParser = new BasicIntExpressionParserFactory().Create(variableNames);
-
-			Assert.Throws<ParserException>(() => expressionParser.Atomize(input));
 		}
 
 		[TestCase(
@@ -94,6 +79,11 @@ namespace LSystemsTests.ParsersTests
 			new string[]{"x", "y", "z"},
 			new int[]{3, 4, 5},
 			-8)]
+		[TestCase(
+			"4*((1+2)+3)",
+			new string[]{},
+			new int[]{},
+			24)]
 		public void BasicIntExpressionParser_Parse_ValidInputTest(
 			string input, string[] variableNames, int[] parameters, int expectedValue)
 		{

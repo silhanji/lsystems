@@ -22,13 +22,17 @@ namespace LSystems.Parsers
 		#region PARSER_OPERATORS
 		public class ParserOperator
 		{
-			internal readonly char Representation;
+			internal readonly string Representation;
 
-			public ParserOperator(char representation)
+			public ParserOperator(string representation)
 			{
-				if(char.IsLetterOrDigit(representation) || representation == '(' || representation == ')')
-					throw new ArgumentException("representation cannot be letter, digit, or bracket");
-
+				foreach (var c in representation)
+				{
+					if(char.IsLetterOrDigit(c) || c == '(' || c == ')' || c == '.' || c == ',')
+						throw new ArgumentException("representation cannot contain letter, digit, bracket, " +
+						                            "comma or point");
+				}
+				
 				Representation = representation;
 			}
 		}
@@ -37,7 +41,7 @@ namespace LSystems.Parsers
 		{
 			internal readonly Func<Expression, Expression> Handler;
 
-			public UnaryOperator(char representation, Func<Expression, Expression> handler) : base(representation)
+			public UnaryOperator(string representation, Func<Expression, Expression> handler) : base(representation)
 			{
 				Handler = handler ?? throw new ArgumentException("handler cannot be null");
 			}
@@ -51,22 +55,22 @@ namespace LSystems.Parsers
 			internal readonly int Priority;
 			internal readonly Func<Expression, Expression, Expression> Handler;
 
-			public BinaryOperator(char representation, int priority, Func<Expression, Expression, Expression> handler)
+			public BinaryOperator(string representation, int priority, Func<Expression, Expression, Expression> handler)
 				: base(representation)
 			{
 				Priority = priority;
 				Handler = handler ?? throw new ArgumentException("handler cannot be null");
 			}
 
-			public BinaryOperator(char representation, Func<Expression, Expression, Expression> handler)
+			public BinaryOperator(string representation, Func<Expression, Expression, Expression> handler)
 				: this(representation, LOW_PRIORITY, handler)
 			{ }
 		}	
 		#endregion
 
 		private readonly string[] _variableNames;
-		private readonly Dictionary<char, UnaryOperator> _unaryOperators;
-		private readonly Dictionary<char, BinaryOperator> _binaryOperators;
+		private readonly Dictionary<string, UnaryOperator> _unaryOperators;
+		private readonly Dictionary<string, BinaryOperator> _binaryOperators;
 
 		//Maximum priority found on some BinaryOperator in _binaryOperators
 		private readonly int _maxPriority;
@@ -76,7 +80,7 @@ namespace LSystems.Parsers
 			BinaryOperator[] binaryOperators)
 		{
 			_variableNames = variableNames ?? new string[0];
-			_unaryOperators = new Dictionary<char, UnaryOperator>();
+			_unaryOperators = new Dictionary<string, UnaryOperator>();
 			if (unaryOperators != null)
 			{
 				foreach (var op in unaryOperators)
@@ -88,7 +92,7 @@ namespace LSystems.Parsers
 
 			_maxPriority = 0;
 			_minPriority = 0;
-			_binaryOperators = new Dictionary<char, BinaryOperator>();
+			_binaryOperators = new Dictionary<string, BinaryOperator>();
 			if (binaryOperators != null && binaryOperators.Length > 0)
 			{
 				_maxPriority = binaryOperators[0].Priority;
@@ -148,8 +152,7 @@ namespace LSystems.Parsers
 				else if (bracketDepth == 0 											//Atom is not inside any bracket
 				         && i != first 												//Atom has something on it's left
 				         && i != (afterLast-1) 										//Atom has something on it's right
-				         && atoms[i].Length == 1 									//Atom is in desired form
-				         && _binaryOperators.TryGetValue(atoms[i][0], out var op)	//Atom is defined operator
+				         && _binaryOperators.TryGetValue(atoms[i], out var op)		//Atom is defined operator
 				         && op.Priority == priority)								//Operator has priority which is looked for
 				{
 					var leftSide = ParseBinaryOperator(atoms, priority+1, first, i);
@@ -163,7 +166,7 @@ namespace LSystems.Parsers
 
 		private Expression ParseUnaryOperators(in List<string> atoms, int first, int afterLast)
 		{
-			if (atoms[first].Length == 1 && _unaryOperators.TryGetValue(atoms[first][0], out var op))
+			if (atoms[first].Length == 1 && _unaryOperators.TryGetValue(atoms[first], out var op))
 			{
 				var rightSide = ParseUnaryOperators(atoms, first + 1, afterLast);
 				return op.Handler(rightSide);
@@ -215,7 +218,8 @@ namespace LSystems.Parsers
 		{
 			Undefined,
 			Number,
-			Variable,
+			Identifier,
+			ControlCharacter,
 			ParserOperator
 		}
 
@@ -233,13 +237,13 @@ namespace LSystems.Parsers
 		{
 			if (char.IsDigit(c) || c == '.') 
 				return CharType.Number;
-			if (char.IsLetter(c)) 
-				return CharType.Variable;
-			if (_unaryOperators.ContainsKey(c) || _binaryOperators.ContainsKey(c) 
-			                                   || c == '(' || c == ')') 
-				return CharType.ParserOperator;
-
-			return CharType.Undefined;
+			if (char.IsLetter(c) || c == '_') 
+				return CharType.Identifier;
+			if (c == '(' || c == ')' || c == ',')
+				return CharType.ControlCharacter;
+			
+			return CharType.ParserOperator; //FIXME: Wild guess here, but easier than to search through all operators
+											// 		 and possible error is negligible
 		}
 		
 		/// <summary>
@@ -260,6 +264,9 @@ namespace LSystems.Parsers
 				CharType charType = GetCharType(c);
 				if(charType == CharType.Undefined) throw new ParserException("Unknown symbol: " + c);
 
+				if (prevCharType == CharType.Identifier && charType == CharType.Number) 
+					charType = CharType.Identifier; //Identifiers can contain numbers, but cant start with one
+				
 				if (charType != prevCharType && builder.Length > 0)
 				{
 					result.Add(builder.ToString());
@@ -268,9 +275,9 @@ namespace LSystems.Parsers
 
 				builder.Append(c);
 				prevCharType = charType;
-				
-				//Hack: All math symbols are one character only -> we want to add them in next iteration
-				if (charType == CharType.ParserOperator) prevCharType = CharType.Undefined;
+
+				//All control characters are one char only so we need to add them directly
+				if (prevCharType == CharType.ControlCharacter) prevCharType = CharType.Undefined;
 			}
 			
 			if(builder.Length > 0) result.Add(builder.ToString());
@@ -300,36 +307,41 @@ namespace LSystems.Parsers
 		}
 	}
 
+	public interface IExpressionParserFactory<T>
+	{
+		ExpressionParser<T> Create(string[] variableNames);
+	}
+	
 	/// <summary>
 	/// Factory which creates IntExpressionParser with common operators predefined
 	/// Predefined operators are: unary: -
 	/// 						  binary: +, -, *, / 
 	/// </summary>
-	public class BasicIntExpressionParserFactory
+	public class BasicIntExpressionParserFactory : IExpressionParserFactory<int>
 	{
-		public IntExpressionParser Create(string[] variableNames)
+		public ExpressionParser<int> Create(string[] variableNames)
 		{
 			var unaryOperators = new IntExpressionParser.UnaryOperator[]
 			{
-				new ExpressionParser<int>.UnaryOperator('-',
+				new ExpressionParser<int>.UnaryOperator("-",
 					expression => { return args => -1 * expression(args);}), 
 			};
 			var binaryOperators = new IntExpressionParser.BinaryOperator[]
 			{
 				new ExpressionParser<int>.BinaryOperator(
-					'+', 
+					"+", 
 					ExpressionParser<int>.BinaryOperator.LOW_PRIORITY,
 					(left, right) => { return args => left(args) + right(args);}),
 				new ExpressionParser<int>.BinaryOperator(
-					'-',
+					"-",
 					ExpressionParser<int>.BinaryOperator.LOW_PRIORITY,
 					(left, right) => { return args => left(args) - right(args);}),
 				new ExpressionParser<int>.BinaryOperator(
-					'*',
+					"*",
 					ExpressionParser<int>.BinaryOperator.HIGH_PRIORITY,
 					(left, right) => { return args => left(args) * right(args);}),
 				new ExpressionParser<int>.BinaryOperator(
-					'/',
+					"/",
 					ExpressionParser<int>.BinaryOperator.HIGH_PRIORITY,
 					(left, right) => { return args => left(args) / right(args);}) 
 			};
