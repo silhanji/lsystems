@@ -1,374 +1,538 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
 using System.Text;
-
-[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("LSystemsTests")]
 
 namespace LSystems.Parsers
 {
-	/// <summary>
-	/// Abstract class that serves as base for other expression parsers
-	/// Only missing part is method GetNumericValue which is used to convert number to T
-	/// Uses recursion for parsing, shouldn't be used on unreasonably large inputs as there is threat of
-	/// stack overflow
-	/// </summary>
-	/// <typeparam name="T">Type of parameters used in delegates evaluation</typeparam>
-	public abstract class ExpressionParser<T>
+	#region IDENTIFIERS
+	
+	public delegate T Expression<T>(T[] parameters);
+	
+	public abstract class Identifier
 	{
-		public delegate T Expression(T[] parameters);
+		public readonly string Representation;
 
-		#region PARSER_OPERATORS
-		public class ParserOperator
+		protected Identifier(string representation)
 		{
-			internal readonly string Representation;
+			if(string.IsNullOrWhiteSpace(representation))
+				throw new ParserException("representation cannot be null or empty");
 
-			public ParserOperator(string representation)
+			foreach (var c in representation)
 			{
-				foreach (var c in representation)
-				{
-					if(char.IsLetterOrDigit(c) || c == '(' || c == ')' || c == '.' || c == ',')
-						throw new ArgumentException("representation cannot contain letter, digit, bracket, " +
-						                            "comma or point");
-				}
-				
-				Representation = representation;
+				if(c == ',' || c == '.' || c == '(' || c == ')')
+					throw new ParserException("representation cannot contain comma, point or bracket");
 			}
+
+			Representation = representation;
 		}
-		
-		public sealed class UnaryOperator : ParserOperator
-		{
-			internal readonly Func<Expression, Expression> Handler;
+	}
 
-			public UnaryOperator(string representation, Func<Expression, Expression> handler) : base(representation)
-			{
-				Handler = handler ?? throw new ArgumentException("handler cannot be null");
-			}
+	public class UnaryOperator<T> : Identifier
+	{
+		public readonly Func<Expression<T>, Expression<T>> Handler;
+		
+		public UnaryOperator(string representation, Func<Expression<T>, Expression<T>> handler) : base(representation)
+		{
+			Handler = handler ?? throw new ParserException("handler cannot be null");
 		}
-		
-		public sealed class BinaryOperator : ParserOperator
+	}
+
+	public class BinaryOperator<T> : Identifier
+	{
+		public readonly Func<Expression<T>, Expression<T>, Expression<T>> Handler;
+		public readonly int Priority;
+
+		public BinaryOperator(string representation, 
+			int priority, Func<Expression<T>, Expression<T>, Expression<T>> handler) : base(representation)
 		{
-			public static readonly int LOW_PRIORITY = 0;
-			public static readonly int HIGH_PRIORITY = 1;
-			
-			internal readonly int Priority;
-			internal readonly Func<Expression, Expression, Expression> Handler;
+			Priority = priority;
+			Handler = handler ?? throw new ParserException("handler cannot be null");
+		}
+	}
 
-			public BinaryOperator(string representation, int priority, Func<Expression, Expression, Expression> handler)
-				: base(representation)
-			{
-				Priority = priority;
-				Handler = handler ?? throw new ArgumentException("handler cannot be null");
-			}
+	public class Function<T> : Identifier
+	{
+		public readonly Func<Expression<T>[], Expression<T>> Handler;
 
-			public BinaryOperator(string representation, Func<Expression, Expression, Expression> handler)
-				: this(representation, LOW_PRIORITY, handler)
-			{ }
-		}	
-		#endregion
+		public Function(string representation, Func<Expression<T>[], Expression<T>> handler) : base(representation)
+		{
+			Handler = handler ?? throw new ParserException("handler cannot be null");
+		}
+	}
 
-		private readonly string[] _variableNames;
-		private readonly Dictionary<string, UnaryOperator> _unaryOperators;
-		private readonly Dictionary<string, BinaryOperator> _binaryOperators;
+	public class Variable : Identifier
+	{
+		public readonly int Index;
 
-		//Maximum priority found on some BinaryOperator in _binaryOperators
-		private readonly int _maxPriority;
+		public Variable(string representation, int index) : base(representation)
+		{
+			if(index < 0) throw new ParserException("index must be grater or equal to 0");
+			Index = index;
+		}
+	}
+
+	#endregion
+
+	#region EXPRESSION_PARSER
+	public class ExpressionParser<T>
+	{
+		private readonly Dictionary<string, UnaryOperator<T>> _unaryOperators;
+		private readonly Dictionary<string, BinaryOperator<T>> _binaryOperators;
+		private readonly Dictionary<string, Function<T>> _functions;
+		private readonly Dictionary<string, Variable> _variables;
+
+		private readonly HashSet<string> _registredIdentifiers;
+		
+		public const int PRIORITY_LOW = 0;
+		public const int PRIORITY_HIGH = 1;
+
 		private readonly int _minPriority;
+		private readonly int _maxPriority;
 
-		public ExpressionParser(string[] variableNames, UnaryOperator[] unaryOperators, 
-			BinaryOperator[] binaryOperators)
+		public ExpressionParser(UnaryOperator<T>[] unaryOperators, BinaryOperator<T>[] binaryOperators, 
+			Function<T>[] functions, Variable[] variables)
 		{
-			_variableNames = variableNames ?? new string[0];
-			_unaryOperators = new Dictionary<string, UnaryOperator>();
-			if (unaryOperators != null)
+			_registredIdentifiers = new HashSet<string>();
+			
+			_unaryOperators = new Dictionary<string, UnaryOperator<T>>();
+			if(unaryOperators != null)
 			{
 				foreach (var op in unaryOperators)
 				{
-					if(!_unaryOperators.TryAdd(op.Representation, op)) 
+					if(op == null) throw new ParserException("unaryOperators cannot contain null values");
+					_registredIdentifiers.Add(op.Representation);
+					
+					if(!_unaryOperators.TryAdd(op.Representation, op))
 						throw new ParserException("Duplicit definition of operator: " + op.Representation);
 				}
 			}
 
-			_maxPriority = 0;
 			_minPriority = 0;
-			_binaryOperators = new Dictionary<string, BinaryOperator>();
-			if (binaryOperators != null && binaryOperators.Length > 0)
+			_maxPriority = 0;
+			
+			_binaryOperators = new Dictionary<string, BinaryOperator<T>>();
+			if(binaryOperators != null && binaryOperators.Length > 0)
 			{
-				_maxPriority = binaryOperators[0].Priority;
 				_minPriority = binaryOperators[0].Priority;
-
+				_maxPriority = binaryOperators[0].Priority;
+				
 				foreach (var op in binaryOperators)
 				{
-					if (op.Priority > _maxPriority) _maxPriority = op.Priority;
-					if (op.Priority < _minPriority) _minPriority = op.Priority;
+					if(op == null) throw new ParserException("binaryOperators cannot contain null values");
+					
+					_registredIdentifiers.Add(op.Representation);
+					if (op.Priority < _minPriority)
+						_minPriority = op.Priority;
+					if (op.Priority > _maxPriority)
+						_maxPriority = op.Priority;
+					
 					if(!_binaryOperators.TryAdd(op.Representation, op))
+						throw new ParserException("Duplicit definition of operator: " + op.Representation);
+					
+				}
+			}
+			
+			_functions = new Dictionary<string, Function<T>>();
+			if(functions != null)
+			{
+				foreach (var op in functions)
+				{
+					if(op == null)
+						throw new ParserException("functions cannot contain null elements");
+					
+					_registredIdentifiers.Add(op.Representation);
+					
+					if(!_functions.TryAdd(op.Representation, op))
+						throw new ParserException("Duplicit definition of operator: " + op.Representation);
+				}
+			}
+
+			_variables = new Dictionary<string, Variable>();
+			if(variables != null)
+			{
+				foreach (var op in variables)
+				{
+					if(op == null)
+						throw new ParserException("variables cannot contain null elements");
+					
+					_registredIdentifiers.Add(op.Representation);
+					
+					if(!_variables.TryAdd(op.Representation, op))
 						throw new ParserException("Duplicit definition of operator: " + op.Representation);
 				}
 			}
 		}
-		
-		/// <summary>
-		/// Creates Expression from string representing given expression
-		/// </summary>
-		/// <param name="expression">string representation of expression</param>
-		/// <returns>Expression delegate</returns>
-		public Expression ParseExpression(string expression)
+
+		public Expression<T> Parse(string input)
 		{
-			//Remove whitespace characters from expression
-			var builder = new StringBuilder();
-			foreach (var c in expression)
-			{
-				if (!char.IsWhiteSpace(c))
-					builder.Append(c);
-			}
-			expression = builder.ToString();
-			var atoms = Atomize(expression);
-			return ParseBinaryOperator(atoms,_minPriority, 0, atoms.Count);
+			var tokenizer = new Tokenizer(_registredIdentifiers);
+			var tokens = tokenizer.Tokenize(input);
+
+			return ParseBinaryOperator(tokens, _minPriority, 0, tokens.Length);
 		}
 
-		/// <summary>
-		/// Tries finding and parsing some binary operator in given range inside atoms list
-		/// If no binary operator is found calls ParseUnaryOperator
-		/// If binary operator is found, calls recursively itself to parse left and right side
-		/// </summary>
-		/// <param name="atoms">List of atoms (preferably obtained by Atomize method)</param>
-		/// <param name="priority">Priority of operation which should be parsed</param>
-		/// <param name="first">Index of first item in Atoms that should be parsed</param>
-		/// <param name="afterLast">Index which is directly after last item that should be parsed</param>
-		/// <returns>Expression delegate</returns>
-		private Expression ParseBinaryOperator(in List<string> atoms, int priority, int first, int afterLast)
+		private Expression<T> ParseBinaryOperator(Token[] tokens, int priority, int first, int count)
 		{
 			if (priority > _maxPriority)
-				return ParseUnaryOperators(atoms, first, afterLast);
-			
+				return ParseUnaryOperator(tokens, first, count);
+
 			int bracketDepth = 0;
-			for (int i = first; i < afterLast; i++)
+			for (int i = first; i < first + count; i++)
 			{
-				if (atoms[i] == "(")
-					bracketDepth++;
-				else if (atoms[i] == ")")
-					bracketDepth--;
-				else if (bracketDepth == 0 											//Atom is not inside any bracket
-				         && i != first 												//Atom has something on it's left
-				         && i != (afterLast-1) 										//Atom has something on it's right
-				         && _binaryOperators.TryGetValue(atoms[i], out var op)		//Atom is defined operator
-				         && op.Priority == priority)								//Operator has priority which is looked for
+				if (tokens[i].Type == Token.TokenType.Control)
 				{
-					var leftSide = ParseBinaryOperator(atoms, priority+1, first, i);
-					var rightSide = ParseBinaryOperator(atoms, priority, i + 1, afterLast);
+					if (tokens[i].Value == "(")
+						bracketDepth++;
+					else if (tokens[i].Value == ")")
+						bracketDepth--;
+				} else if (tokens[i].Type == Token.TokenType.Identifier 
+				           && bracketDepth == 0
+				           && i != first
+				           && i != first + count - 1
+				           && _binaryOperators.TryGetValue(tokens[i].Value, out var op)
+				           && op.Priority == priority)
+				{
+					var leftSide = ParseBinaryOperator(tokens, priority + 1, first, (i - first));
+					var rightSide = ParseBinaryOperator(tokens, priority, i + 1, count - i -1 + first);
 					return op.Handler(leftSide, rightSide);
 				}
 			}
 
-			return ParseBinaryOperator(atoms, priority + 1, first, afterLast);
+			return ParseBinaryOperator(tokens, priority + 1, first, count);
 		}
 
-		private Expression ParseUnaryOperators(in List<string> atoms, int first, int afterLast)
+		private Expression<T> ParseUnaryOperator(Token[] tokens, int first, int count)
 		{
-			if (atoms[first].Length == 1 && _unaryOperators.TryGetValue(atoms[first], out var op))
+			if (tokens[first].Type == Token.TokenType.Identifier
+			    && _unaryOperators.TryGetValue(tokens[first].Value, out var op))
 			{
-				var rightSide = ParseUnaryOperators(atoms, first + 1, afterLast);
-				return op.Handler(rightSide);
+				var argument = ParseIdentifier(tokens, first + 1, count - 1);
+				return op.Handler(argument);
 			}
 
-			return ParseNonOperators(atoms, first, afterLast);
+			return ParseIdentifier(tokens, first, count);
 		}
-		
-		private Expression ParseNonOperators(in List<string> atoms, int first, int afterLast)
+
+		private Expression<T> ParseIdentifier(Token[] tokens, int first, int count)
 		{
-			if (atoms[first] == "(" && atoms[afterLast - 1] == ")")
-				return ParseBinaryOperator(atoms, _minPriority, first + 1, afterLast - 1);
-			else if (first == afterLast - 1)
+			if (tokens[first].Type == Token.TokenType.Control && tokens[first].Value == "(" &&
+			    tokens[first + count - 1].Type == Token.TokenType.Control && tokens[first + count - 1].Value == ")")
 			{
-				if (double.TryParse(atoms[first], out double number))
+				return ParseBinaryOperator(tokens, _minPriority, first + 1, count - 2);
+			} else if (tokens[first].Type == Token.TokenType.Identifier)
+			{
+				if (count == 1 && _variables.TryGetValue(tokens[first].Value, out var variable))
 				{
-					return GetNumericValue(atoms[first]);
-				}
-				else
+					return args => args[variable.Index];
+				} 
+				else if (_functions.TryGetValue(tokens[first].Value, out var function) 
+				         && tokens[first+1].Value == "("
+				         && tokens[first+count-1].Value == ")")
 				{
-					return GetVariableValue(atoms[first]);
+					var arguments = new List<Expression<T>>();
+					int bracketDepth = 0;
+					first += 2;
+					int argStart = first;
+					for(int i = first; i - first < count-3; i++)
+					{
+						if (tokens[i].Type == Token.TokenType.Control)
+						{
+							switch (tokens[i].Value)
+							{
+								case "(":
+									bracketDepth++;
+									break;
+								case ")":
+									bracketDepth--;
+									break;
+								case ",":
+									if (bracketDepth == 0)
+									{
+										var argument = ParseBinaryOperator(tokens, _minPriority, argStart, i - argStart);
+										argStart = i + 1;
+										arguments.Add(argument);
+									}
+
+									break;
+								default:
+									throw new ParserException("Unknown token: " + tokens[i].Value);
+							}
+						}
+					}
+
+					var lastArgument = ParseBinaryOperator(tokens, _minPriority, argStart, count - 3 - argStart+first);
+					arguments.Add(lastArgument);
+
+					return function.Handler(arguments.ToArray());
 				}
-			}
-			else
+			} else if (tokens[first].Type == Token.TokenType.Literal && count == 1)
 			{
-				throw new ParserException("Unable to parse atoms between indices " + first + 
-				                          " and " + afterLast);
+				return ParseLiteral(tokens[first]);
 			}
-		}
-
-		private Expression GetVariableValue(string variableName)
-		{
-			int index;
-			for (index = 0; index < _variableNames.Length; index++)
-			{
-				if (_variableNames[index] == variableName)
-					break;
-			}
-			if(index == _variableNames.Length)
-				throw new ParserException("Undefined variable: " + variableName);
-
-			return args => args[index];
-		}
-
-		protected abstract Expression GetNumericValue(string numberRepresentation);
-
-		#region ATOMIZE
-		private enum CharType
-		{
-			Undefined,
-			Number,
-			Identifier,
-			ControlCharacter,
-			ParserOperator
-		}
-
-		/// <summary>
-		/// Returns CharType based on character
-		/// </summary>
-		/// <param name="c">character whose type will be returned</param>
-		/// <returns>
-		/// CharType.Number if c is digit,
-		/// CharType.Variable if c is digit,
-		/// CharType.ParserOperator if c is some defined ParserOperator
-		/// CharType.Undefined otherwise
-		/// </returns>
-		private CharType GetCharType(char c)
-		{
-			if (char.IsDigit(c) || c == '.') 
-				return CharType.Number;
-			if (char.IsLetter(c) || c == '_') 
-				return CharType.Identifier;
-			if (c == '(' || c == ')' || c == ',')
-				return CharType.ControlCharacter;
 			
-			return CharType.ParserOperator; //FIXME: Wild guess here, but easier than to search through all operators
-											// 		 and possible error is negligible
+			throw new ParserException("Unable to parse " + count + " tokens starting at index " + first);
 		}
-		
-		/// <summary>
-		/// Convert expression to atoms
-		/// Internal only for UnitTesting purposes
-		/// </summary>
-		/// <param name="expression">string with given math expression, without spaces</param>
-		/// <returns>List of strings, each element of list representing one element in expression</returns>
-		/// <exception cref="ParserException">Thrown if unknown symbol is found during atomizing</exception>
-		internal List<string> Atomize(string expression)
+
+		private Expression<T> ParseLiteral(Token token)
 		{
-			var result = new List<string>();
-			var builder = new StringBuilder();
+			var literal = ParseLiteral(token.Value);
+			return args => literal;
+		}
 
-			CharType prevCharType = CharType.Undefined;
-			foreach (var c in expression)
+		protected virtual T ParseLiteral(string representation)
+		{
+			throw new ParserException("Unknown literal: " + representation);
+		}
+	}
+
+	public class IntExpressionParser : ExpressionParser<int>
+	{
+		public IntExpressionParser(UnaryOperator<int>[] unaryOperators, BinaryOperator<int>[] binaryOperators,
+			Function<int>[] functions, Variable[] variables)
+			: base(unaryOperators, binaryOperators, functions, variables)
+		{
+			
+		}
+
+		protected override int ParseLiteral(string representation)
+		{
+			if (int.TryParse(representation, out int value))
+				return value;
+			
+			throw new ParserException(representation + " is not a number");
+		}
+	}
+
+	public class DoubleExpressionParser : ExpressionParser<double>
+	{
+		public DoubleExpressionParser(UnaryOperator<double>[] unaryOperators, BinaryOperator<double>[] binaryOperators,
+			Function<double>[] functions, Variable[] variables)
+			: base(unaryOperators, binaryOperators, functions, variables)
+		{
+			
+		}
+
+		protected override double ParseLiteral(string representation)
+		{
+			if (double.TryParse(representation, out double value))
+				return value;
+			
+			throw new ParserException(representation + " is not a number");
+		}
+	}
+	
+	public class IntExpressionParserFactory
+	{
+		//TODO: Consider making private and adding access methods
+		public UnaryOperator<int>[] UnaryOperators;
+		public BinaryOperator<int>[] BinaryOperators;
+		public Function<int>[] Functions;
+
+		public IntExpressionParserFactory()
+		{
+			UnaryOperators = new[]
 			{
-				CharType charType = GetCharType(c);
-				if(charType == CharType.Undefined) throw new ParserException("Unknown symbol: " + c);
+				new UnaryOperator<int>("-", 
+					expression => { return (args) => -1 * expression(args);}), 
+			};
+			BinaryOperators = new[]
+			{
+				new BinaryOperator<int>("+", ExpressionParser<int>.PRIORITY_LOW,
+					(left, right) => { return (args) => left(args) + right(args); }),
+				new BinaryOperator<int>("-", ExpressionParser<int>.PRIORITY_LOW,
+					(left, right) => { return (args) => left(args) - right(args); }),
+				new BinaryOperator<int>("*", ExpressionParser<int>.PRIORITY_HIGH,
+					(left, right) => { return (args) => left(args) * right(args); }),
+				new BinaryOperator<int>("/", ExpressionParser<int>.PRIORITY_HIGH,
+					(left, right) => { return (args) => left(args) / right(args); }),
+			};
+			Functions = new Function<int>[0];
+		}
 
-				if (prevCharType == CharType.Identifier && charType == CharType.Number) 
-					charType = CharType.Identifier; //Identifiers can contain numbers, but cant start with one
-				
-				if (charType != prevCharType && builder.Length > 0)
+		public IntExpressionParser Create(Variable[] variables)
+		{
+			return new IntExpressionParser(UnaryOperators, BinaryOperators, Functions, variables);
+		}
+
+		public IntExpressionParser Create(string[] variableNames)
+		{
+			var variables = CreateVariables(variableNames);
+			return Create(variables);
+		}
+
+		private Variable[] CreateVariables(string[] variableNames)
+		{
+			var variables = new Variable[variableNames.Length];
+			for(int i = 0; i < variableNames.Length; i++)
+			{
+				variables[i] = new Variable(variableNames[i], i);
+			}
+
+			return variables;
+		}
+	}
+
+	#endregion
+
+	#region TOKENIZER
+	internal class Tokenizer
+	{
+		private readonly HashSet<string> _identifiers;
+
+		public Tokenizer(string[] identifiers)
+		{
+			if(identifiers == null)
+				identifiers = new string[0];
+			
+			_identifiers = new HashSet<string>(identifiers);
+		}
+
+		public Tokenizer(HashSet<string> identifiers)
+		{
+			_identifiers = identifiers ?? new HashSet<string>();
+		}
+
+		public Token[] Tokenize(string input)
+		{
+			input = RemoveDoubleWhitespaces(input);
+			var tokens = new List<Token>();
+		
+			var builder = new StringBuilder();
+			var prevCharType = CharType.Unknown;
+			foreach (var c in input)
+			{
+				var charType = GetCharType(c);
+				if (charType == CharType.Digit && prevCharType == CharType.Letter) 
+					charType = CharType.Letter; //Identifiers can contain numbers but must have letters before them
+
+				if (charType == CharType.Control)
+					prevCharType = CharType.Unknown; //Force to add prev char as controls are one letter only
+
+				if (charType != prevCharType && builder.Length != 0)
 				{
-					result.Add(builder.ToString());
+					tokens.Add(CreateToken(builder.ToString()));
 					builder.Clear();
 				}
 
+				if (charType == CharType.Whitespace)
+				{
+					if (builder.Length > 0)
+					{
+						tokens.Add(CreateToken(builder.ToString()));
+						builder.Clear();
+					}
+
+					continue;
+				}
+				
 				builder.Append(c);
 				prevCharType = charType;
-
-				//All control characters are one char only so we need to add them directly
-				if (prevCharType == CharType.ControlCharacter) prevCharType = CharType.Undefined;
 			}
-			
-			if(builder.Length > 0) result.Add(builder.ToString());
-			
-			return result;
-		}
-		#endregion
-	}
-	
-	/// <summary>
-	/// Parser based on ExpressionParser which is specialized to int
-	/// </summary>
-	public class IntExpressionParser : ExpressionParser<int>
-	{
-		public IntExpressionParser(string[] variableNames, UnaryOperator[] unaryOperators, 
-			BinaryOperator[] binaryOperators) 
-			: base(variableNames, unaryOperators, binaryOperators) { }
+			if(builder.Length != 0)
+				tokens.Add(CreateToken(builder.ToString()));
 
-		protected override Expression GetNumericValue(string numberRepresentation)
+			return tokens.ToArray();
+		}
+
+		private string RemoveDoubleWhitespaces(string input)
 		{
-			if (int.TryParse(numberRepresentation, out int value))
+			var builder = new StringBuilder();
+			bool wasWhitespace = false;
+			foreach (char c in input)
 			{
-				return args => value;
+				if (char.IsWhiteSpace(c))
+				{
+					if (wasWhitespace)
+						continue;
+					
+					wasWhitespace = true;
+				}
+				else
+				{
+					wasWhitespace = false;
+				}
+
+				builder.Append(c);
 			}
+			return builder.ToString().Trim(); //Trim to remove one leading and one trailing whitespace if present
+		}
+
+		private Token CreateToken(string value)
+		{
+			if(string.IsNullOrWhiteSpace(value)) 
+				return new Token(Token.TokenType.Unknown, "");
 			
-			throw new ParserException("Following cannot be parsed into integer: " + numberRepresentation);
+			if(value.Length == 1 && GetCharType(value[0]) == CharType.Control)
+				return new Token(Token.TokenType.Control, value);
+			
+			if(_identifiers.Contains(value))
+				return new Token(Token.TokenType.Identifier, value);
+			
+			return new Token(Token.TokenType.Literal, value);
 		}
-	}
 
-	public interface IExpressionParserFactory<T>
-	{
-		ExpressionParser<T> Create(string[] variableNames);
-	}
-	
-	/// <summary>
-	/// Factory which creates IntExpressionParser with common operators predefined
-	/// Predefined operators are: unary: -
-	/// 						  binary: +, -, *, / 
-	/// </summary>
-	public class BasicIntExpressionParserFactory : IExpressionParserFactory<int>
-	{
-		public ExpressionParser<int> Create(string[] variableNames)
+		private CharType GetCharType(char c)
 		{
-			var unaryOperators = new IntExpressionParser.UnaryOperator[]
-			{
-				new ExpressionParser<int>.UnaryOperator("-",
-					expression => { return args => -1 * expression(args);}), 
-			};
-			var binaryOperators = new IntExpressionParser.BinaryOperator[]
-			{
-				new ExpressionParser<int>.BinaryOperator(
-					"+", 
-					ExpressionParser<int>.BinaryOperator.LOW_PRIORITY,
-					(left, right) => { return args => left(args) + right(args);}),
-				new ExpressionParser<int>.BinaryOperator(
-					"-",
-					ExpressionParser<int>.BinaryOperator.LOW_PRIORITY,
-					(left, right) => { return args => left(args) - right(args);}),
-				new ExpressionParser<int>.BinaryOperator(
-					"*",
-					ExpressionParser<int>.BinaryOperator.HIGH_PRIORITY,
-					(left, right) => { return args => left(args) * right(args);}),
-				new ExpressionParser<int>.BinaryOperator(
-					"/",
-					ExpressionParser<int>.BinaryOperator.HIGH_PRIORITY,
-					(left, right) => { return args => left(args) / right(args);}) 
-			};
-			return new IntExpressionParser(variableNames, unaryOperators, binaryOperators);
+			if (char.IsWhiteSpace(c)) return CharType.Whitespace;
+			if (char.IsLetter(c) || c == '_') return CharType.Letter;
+			if (char.IsDigit(c) || c == '.') return CharType.Digit;
+			if (c == '(' || c == ')' || c == ',') return CharType.Control;
+
+			return CharType.Other;
+		}
+		
+		private enum CharType
+		{
+			Unknown,
+			Whitespace,
+			Letter,
+			Digit,
+			Control,
+			Other,
 		}
 	}
 	
-	/// <summary>
-	/// Parser based on ExpressionParser which is specialized to double
-	/// </summary>
-	public class DoubleExpressionParser : ExpressionParser<double>
-	{
-		public DoubleExpressionParser(string[] variableNames, UnaryOperator[] unaryOperators, 
-			BinaryOperator[] binaryOperators) 
-			: base(variableNames, unaryOperators, binaryOperators) { }
+	
+	internal struct Token : IEquatable<Token> {
 
-		protected override Expression GetNumericValue(string numberRepresentation)
+		public enum TokenType
 		{
-			if (double.TryParse(numberRepresentation, out double value))
+			Unknown,
+			Control,		//( ) ,
+			Identifier,
+			Literal			//E.g. explicit number values
+		}
+
+		public readonly TokenType Type;
+		public readonly string Value;
+
+		public Token(TokenType type, string value)
+		{
+			Type = type;
+			if (string.IsNullOrWhiteSpace(value))
+				throw new ParserException("token value cannot be null or empty");
+			Value = value;
+		}
+
+		public bool Equals(Token other)
+		{
+			return (this.Type == other.Type) && this.Value == other.Value;
+		}
+		
+		public override bool Equals(object obj)
+		{
+			if (obj is Token)
 			{
-				return args => value;
+				return Equals((Token) obj);
 			}
 
-			throw new ParserException("Following cannot be parsed into real: " + numberRepresentation);
+			return false;
+		}
+
+		public override int GetHashCode()
+		{
+			return Value.GetHashCode();
 		}
 	}
-	
-	//TODO: Consider creating BasicDoubleExpressionParserFactory or using inheritance from BasicIntExpressionFactory
-
+	#endregion
 }

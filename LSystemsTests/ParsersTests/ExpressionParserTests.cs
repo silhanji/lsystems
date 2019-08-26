@@ -1,3 +1,4 @@
+using System;
 using LSystems.Parsers;
 using NUnit.Framework;
 
@@ -27,16 +28,23 @@ namespace LSystemsTests.ParsersTests
 			new []{"a", "b", "c"},
 			new []{"(","a","(","(","433",")","34",")","2","b",")"})]
 		
-		public void ExpressionParser_Atomize_ValidInputTest(
+		public void Tokenizer_Tokenize_ValidInputTest(
 			string input, string[] variableNames, string[] expectedOutput)
 		{
 			//Can't test method from ExpressionParser directly as ExpressionParser is abstract class
 			//Testing BasicIntExpressionParser as it uses method from ExpressionParser
-			ExpressionParser<int> expressionParser = new BasicIntExpressionParserFactory().Create(variableNames);
+			Tokenizer tokenizer = new Tokenizer(variableNames);
 
-			var output = expressionParser.Atomize(input);
+			var output = tokenizer.Tokenize(input);
 			
-			Assert.That(output, Is.EqualTo(expectedOutput));
+			//Comparing only string values
+			var sOutput = new string[output.Length];
+			for(int i = 0; i < output.Length; i++)
+			{
+				sOutput[i] = output[i].Value;
+			}
+			
+			Assert.That(sOutput, Is.EqualTo(expectedOutput));
 		}
 
 		[TestCase(
@@ -84,11 +92,11 @@ namespace LSystemsTests.ParsersTests
 			new string[]{},
 			new int[]{},
 			24)]
-		public void BasicIntExpressionParser_Parse_ValidInputTest(
+		public void IntExpressionParser_Parse_ValidInputTest(
 			string input, string[] variableNames, int[] parameters, int expectedValue)
 		{
-			var expressionParser = new BasicIntExpressionParserFactory().Create(variableNames);
-			var handler = expressionParser.ParseExpression(input);
+			var expressionParser = new IntExpressionParserFactory().Create(variableNames);
+			var handler = expressionParser.Parse(input);
 
 			int value = handler(parameters);
 			
@@ -96,16 +104,57 @@ namespace LSystemsTests.ParsersTests
 		}
 
 		[TestCase(
+			"mult(3,sum(2,7))",
+			new string[]{},
+			new int[]{},
+			27)]
+		[TestCase(
+			"diff(x,  y)",
+			new string[]{"x", "y"},
+			new int[]{4, 3},
+			1)]
+		[TestCase(
+			"div(6, 2+1)",
+			new string[]{"x", "y"},
+			new int[]{4, 3},
+			2)]
+		public void IntExpressionParser_Parse_ValidInputFunctionsTest(
+			string input, string[] variableNames, int[] parameters, int expectedValue)
+		{
+			var factory = new IntExpressionParserFactory();
+			//Add some non standard functions which will be tested
+			var functions = new[]
+			{
+				new Function<int>("sum", 
+					(param) => { return (args) => param[0](args) + param[1](args); }), 
+				new Function<int>("diff", 
+					(param) => { return (args) => param[0](args) - param[1](args); }), 
+				new Function<int>("mult", 
+					(param) => { return (args) => param[0](args) * param[1](args); }), 
+				new Function<int>("div", 
+					(param) => { return (args) => param[0](args) / param[1](args); }), 
+			};
+			factory.Functions = functions;
+			
+			var expressionParser = factory.Create(variableNames);
+			var handler = expressionParser.Parse(input);
+
+			int value = handler(parameters);
+			
+			Assert.That(value, Is.EqualTo(expectedValue));
+		}
+		
+		[TestCase(
 			"x+y",
 			new []{"x"})]
 		[TestCase(
 			"x+1.0",
 			new []{"x"})]
-		public void BasicIntExpressionParser_Parse_ExceptionTest(string input, string[] variableNames)
+		public void IntExpressionParser_Parse_ExceptionTest(string input, string[] variableNames)
 		{
-			var expressionParser = new BasicIntExpressionParserFactory().Create(variableNames);
+			var expressionParser = new IntExpressionParserFactory().Create(variableNames);
 
-			Assert.Throws<ParserException>(() => expressionParser.ParseExpression(input));
+			Assert.Throws<ParserException>(() => expressionParser.Parse(input));
 		}
 	}
 }
