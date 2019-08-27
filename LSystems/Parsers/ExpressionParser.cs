@@ -2,12 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("LSystemsTests")]
+
 namespace LSystems.Parsers
 {
 	#region IDENTIFIERS
 	
 	public delegate T Expression<T>(T[] parameters);
-	
+
 	public abstract class Identifier
 	{
 		public readonly string Representation;
@@ -320,15 +322,63 @@ namespace LSystems.Parsers
 			throw new ParserException(representation + " is not a number");
 		}
 	}
-	
-	public class IntExpressionParserFactory
-	{
-		//TODO: Consider making private and adding access methods
-		public UnaryOperator<int>[] UnaryOperators;
-		public BinaryOperator<int>[] BinaryOperators;
-		public Function<int>[] Functions;
 
-		public IntExpressionParserFactory()
+	public class BoolExpressionParser : ExpressionParser<bool>
+	{
+		public BoolExpressionParser(UnaryOperator<bool>[] unaryOperators, BinaryOperator<bool>[] binaryOperators,
+			Function<bool>[] functions, Variable[] variables)
+			: base(unaryOperators, binaryOperators, functions, variables)
+		{
+			
+		}
+
+		protected override bool ParseLiteral(string representation)
+		{
+			var normalized = representation.ToLower();
+			if (normalized == "true")
+				return true;
+			if (normalized == "false")
+				return false;
+
+			throw new ParserException(representation + " is not a boolean value");
+		}
+	}
+	
+	#endregion
+
+	#region EXPRESSION_PARSER_FACTORIES
+
+	public abstract class ExpressionParserFactory<T>
+	{
+		public UnaryOperator<T>[] UnaryOperators { get; set; }
+		public BinaryOperator<T>[] BinaryOperators { get; set; }
+		public Function<T>[] Functions { get; set; }
+
+		public abstract ExpressionParser<T> Create(Variable[] variables);
+
+		public ExpressionParser<T> Create(string[] variableNames)
+		{
+			var variables = CreateVariables(variableNames);
+			return Create(variables);
+		}
+
+		public static Variable[] CreateVariables(string[] variableNames)
+		{
+			var variables = new Variable[variableNames.Length];
+			for(int i = 0; i < variableNames.Length; i++)
+			{
+				variables[i] = new Variable(variableNames[i], i);
+			}
+
+			return variables;
+		}
+	}
+	
+	public class IntExpressionParserFactory : ExpressionParserFactory<int>
+	{
+		public IntExpressionParserFactory() => Init();
+
+		private void Init()
 		{
 			UnaryOperators = new[]
 			{
@@ -349,31 +399,41 @@ namespace LSystems.Parsers
 			Functions = new Function<int>[0];
 		}
 
-		public IntExpressionParser Create(Variable[] variables)
+		public override ExpressionParser<int> Create(Variable[] variables)
 		{
 			return new IntExpressionParser(UnaryOperators, BinaryOperators, Functions, variables);
 		}
+	}
 
-		public IntExpressionParser Create(string[] variableNames)
+	public class BoolExpressionParserFactory : ExpressionParserFactory<bool>
+	{
+		public BoolExpressionParserFactory() => Init();
+
+		private void Init()
 		{
-			var variables = CreateVariables(variableNames);
-			return Create(variables);
+			UnaryOperators = new[]
+			{
+				new UnaryOperator<bool>("!", 
+					expression => { return (args) => !expression(args);}), 
+			};
+			BinaryOperators = new[]
+			{
+				new BinaryOperator<bool>("||", ExpressionParser<bool>.PRIORITY_LOW,
+					(left, right) => { return (args) => left(args) || right(args); }),
+				new BinaryOperator<bool>("&&", ExpressionParser<bool>.PRIORITY_LOW,
+					(left, right) => { return (args) => left(args) && right(args); }),
+			};
+			Functions = new Function<bool>[0];
 		}
 
-		private Variable[] CreateVariables(string[] variableNames)
+		public override ExpressionParser<bool> Create(Variable[] variables)
 		{
-			var variables = new Variable[variableNames.Length];
-			for(int i = 0; i < variableNames.Length; i++)
-			{
-				variables[i] = new Variable(variableNames[i], i);
-			}
-
-			return variables;
+			return new BoolExpressionParser(UnaryOperators, BinaryOperators, Functions, variables);
 		}
 	}
 
 	#endregion
-
+	
 	#region TOKENIZER
 	internal class Tokenizer
 	{
