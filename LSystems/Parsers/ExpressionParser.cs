@@ -281,7 +281,7 @@ namespace LSystems.Parsers
 			return args => literal;
 		}
 
-		protected virtual T ParseLiteral(string representation)
+		public virtual T ParseLiteral(string representation)
 		{
 			throw new ParserException("Unknown literal: " + representation);
 		}
@@ -296,7 +296,7 @@ namespace LSystems.Parsers
 			
 		}
 
-		protected override int ParseLiteral(string representation)
+		public override int ParseLiteral(string representation)
 		{
 			if (int.TryParse(representation, out int value))
 				return value;
@@ -314,7 +314,7 @@ namespace LSystems.Parsers
 			
 		}
 
-		protected override double ParseLiteral(string representation)
+		public override double ParseLiteral(string representation)
 		{
 			if (double.TryParse(representation, out double value))
 				return value;
@@ -332,7 +332,7 @@ namespace LSystems.Parsers
 			
 		}
 
-		protected override bool ParseLiteral(string representation)
+		public override bool ParseLiteral(string representation)
 		{
 			var normalized = representation.ToLower();
 			if (normalized == "true")
