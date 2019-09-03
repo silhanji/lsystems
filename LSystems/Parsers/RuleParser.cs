@@ -51,7 +51,11 @@ namespace LSystems.Parsers
 				contextConditions = new Rule<T>.ContextCondition[0];
 			
 			//Parse param conditions
-			var paramConditions = ParseParamConditions(sections[3], paramNames);
+			Rule<T>.ParamCondition[] paramConditions;
+			if (sections[3] != null)
+				paramConditions = ParseParamConditions(sections[3], paramNames);
+			else
+				paramConditions = new Rule<T>.ParamCondition[0];
 			
 			//Parse next generation modules
 			var nextGenFactories = _moduleParser.ParseModuleFactories(sections[4], paramNames);

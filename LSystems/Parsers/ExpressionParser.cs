@@ -76,7 +76,7 @@ namespace LSystems.Parsers
 	#endregion
 
 	#region EXPRESSION_PARSER
-	public class ExpressionParser<T>
+	public abstract class ExpressionParser<T>
 	{
 		private readonly Dictionary<string, UnaryOperator<T>> _unaryOperators;
 		private readonly Dictionary<string, BinaryOperator<T>> _binaryOperators;
@@ -277,14 +277,11 @@ namespace LSystems.Parsers
 
 		private Expression<T> ParseLiteral(Token token)
 		{
-			var literal = ParseLiteral(token.Value);
+			T literal = ParseLiteral(token.Value);
 			return args => literal;
 		}
 
-		public virtual T ParseLiteral(string representation)
-		{
-			throw new ParserException("Unknown literal: " + representation);
-		}
+		public abstract T ParseLiteral(string representation);
 	}
 
 	public class IntExpressionParser : ExpressionParser<int>
@@ -350,9 +347,9 @@ namespace LSystems.Parsers
 
 	public abstract class ExpressionParserFactory<T>
 	{
-		public UnaryOperator<T>[] UnaryOperators { get; set; }
-		public BinaryOperator<T>[] BinaryOperators { get; set; }
-		public Function<T>[] Functions { get; set; }
+		public abstract UnaryOperator<T>[] UnaryOperators { get; set; }
+		public abstract BinaryOperator<T>[] BinaryOperators { get; set; }
+		public abstract Function<T>[] Functions { get; set; }
 
 		public abstract ExpressionParser<T> Create(Variable[] variables);
 
@@ -376,6 +373,10 @@ namespace LSystems.Parsers
 	
 	public class IntExpressionParserFactory : ExpressionParserFactory<int>
 	{
+		public override UnaryOperator<int>[] UnaryOperators { get; set; }
+		public override BinaryOperator<int>[] BinaryOperators { get; set; }
+		public override Function<int>[] Functions { get; set; }
+		
 		public IntExpressionParserFactory() => Init();
 
 		private void Init()
@@ -398,15 +399,54 @@ namespace LSystems.Parsers
 			};
 			Functions = new Function<int>[0];
 		}
-
+		
 		public override ExpressionParser<int> Create(Variable[] variables)
 		{
 			return new IntExpressionParser(UnaryOperators, BinaryOperators, Functions, variables);
 		}
 	}
 
+	public class DoubleExpressionParserFactory : ExpressionParserFactory<double>
+	{
+		public override UnaryOperator<double>[] UnaryOperators { get; set; }
+		public override BinaryOperator<double>[] BinaryOperators { get; set; }
+		public override Function<double>[] Functions { get; set; }
+		
+		public DoubleExpressionParserFactory() => Init();
+		
+		private void Init()
+		{
+			UnaryOperators = new[]
+			{
+				new UnaryOperator<double>("-", 
+					expression => { return (args) => -1 * expression(args);}), 
+			};
+			BinaryOperators = new[]
+			{
+				new BinaryOperator<double>("+", ExpressionParser<int>.PRIORITY_LOW,
+					(left, right) => { return (args) => left(args) + right(args); }),
+				new BinaryOperator<double>("-", ExpressionParser<int>.PRIORITY_LOW,
+					(left, right) => { return (args) => left(args) - right(args); }),
+				new BinaryOperator<double>("*", ExpressionParser<int>.PRIORITY_HIGH,
+					(left, right) => { return (args) => left(args) * right(args); }),
+				new BinaryOperator<double>("/", ExpressionParser<int>.PRIORITY_HIGH,
+					(left, right) => { return (args) => left(args) / right(args); }),
+			};
+			Functions = new Function<double>[0];
+		}
+		
+		public override ExpressionParser<double> Create(Variable[] variables)
+		{
+			return new DoubleExpressionParser(UnaryOperators, BinaryOperators, Functions, variables);
+		}
+	}
+	
 	public class BoolExpressionParserFactory : ExpressionParserFactory<bool>
 	{
+		public override UnaryOperator<bool>[] UnaryOperators { get; set; }
+		public override BinaryOperator<bool>[] BinaryOperators { get; set; }
+		public override Function<bool>[] Functions { get; set; }
+		
 		public BoolExpressionParserFactory() => Init();
 
 		private void Init()
@@ -425,7 +465,7 @@ namespace LSystems.Parsers
 			};
 			Functions = new Function<bool>[0];
 		}
-
+		
 		public override ExpressionParser<bool> Create(Variable[] variables)
 		{
 			return new BoolExpressionParser(UnaryOperators, BinaryOperators, Functions, variables);

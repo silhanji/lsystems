@@ -21,12 +21,19 @@ namespace LSystems
 			var nextGenModules = new List<Module<T>>();
 			for (int i = 0; i < CurrentGeneration.Count; i++)
 			{
+				bool existsRule = false;
 				var genIndex= new GenerationIndex<T>(CurrentGeneration, i);
 				foreach (var rule in _rules)
 				{
 					if (rule.CanBeApplied(genIndex))
+					{
 						nextGenModules.AddRange(rule.Apply(CurrentGeneration[i]));
+						existsRule = true;
+						break;
+					}
 				}
+				if(!existsRule) //Default 'copy' rule
+					nextGenModules.Add(CurrentGeneration[i]);
 			}
 			CurrentGeneration = new Generation<T>(nextGenModules, CurrentGeneration.Age+1);
 		}

@@ -60,6 +60,8 @@ namespace LSystems.Parsers
 		{
 			if(startIndex < 0 || startIndex >= input.Length) 
 				throw new ArgumentException("startIndex is out of range");
+			while (char.IsWhiteSpace(input[startIndex]))
+				startIndex++;
 			if(!char.IsUpper(input[startIndex])) 
 				throw new ArgumentException("input doesn't contains upper case letter at startIndex");
 

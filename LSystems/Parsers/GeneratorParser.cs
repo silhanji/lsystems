@@ -9,15 +9,15 @@ namespace LSystems.Parsers
 	/// </summary>
 	public class GeneratorParser<T> where T : IComparable<T>
 	{
-		private ModuleParser<T> _moduleParser;
+		public ModuleParser<T> ModuleParser { get; }
 		private RuleParser<T> _ruleParser;
 
 		public GeneratorParser(ExpressionParserFactory<T> expressionParserFactory)
 		{
 			if(expressionParserFactory == null) throw new ArgumentException("expressionParser cannot be null");
 			
-			_moduleParser = new ModuleParser<T>(expressionParserFactory);
-			_ruleParser = new RuleParser<T>(_moduleParser, expressionParserFactory);
+			ModuleParser = new ModuleParser<T>(expressionParserFactory);
+			_ruleParser = new RuleParser<T>(ModuleParser, expressionParserFactory);
 		}
 
 		public Generator<T> Parse(StringReader reader)
@@ -26,7 +26,7 @@ namespace LSystems.Parsers
 			
 			var firstLine = reader.ReadLine();
 			//Axiom
-			var axiomModules = _moduleParser.ParseModules(firstLine);
+			var axiomModules = ModuleParser.ParseModules(firstLine);
 			var axiom = new Generation<T>(new List<Module<T>>(axiomModules), 0);
 			//Rules
 			var rules = new List<Rule<T>>();

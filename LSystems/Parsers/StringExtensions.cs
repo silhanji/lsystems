@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -15,6 +16,8 @@ namespace LSystems.Parsers
 		/// <returns>List of string which correspond to original string without separator character</returns>
 		public static List<string> BracketAwareSplit(this string original, string separator)
 		{
+			if(separator == null) throw new ArgumentException("separator cannot be null");
+			
 			var splitRepresentations = new List<string>();
 			var builder = new StringBuilder();
 			int bracketWidth = 0;
