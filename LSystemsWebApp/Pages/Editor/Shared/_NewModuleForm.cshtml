@@ -1,0 +1,136 @@
+@page
+@model LSystemsWebApp.Pages.Editor.Modules
+
+@{
+    Layout = null;
+}
+
+<div class="card">
+    <h1>New module</h1>
+    <form method="post">
+        
+        <span class="form-desc">
+            Module name:
+        </span>
+        <input class="form-field" type="text" name="module-name"/>
+        <br/>
+  
+        <span class="form-desc">
+            Parameter names:
+        </span>
+        <div id="param-container" style="display: unset;"></div>
+        <input class="form-field" 
+               id="add-param-button"
+               type="button" 
+               value="Add Parameter"/>
+        <br/>
+        
+        <span class="form-desc">
+            Representation
+        </span>
+        <select id="representation-select" class="form-field" name="module-representation">
+            <option value="none" selected>
+                None
+            </option>
+            <option value="line">
+                Line
+            </option>
+            <option value="polygon">
+                Polygon
+            </option>
+            <option value="move">
+                Move
+            </option>
+            <option value="rotation">
+                Rotation
+            </option>
+            <option value="save">
+                Save position on stack
+            </option>
+            <option value="load">
+                Load position from stack
+            </option>
+        </select>
+        <br/>
+        
+        <!-- Line -->
+        <span id="line-length">
+            <span class="form-desc">Length:</span>
+            <input  class="form-field" type="text" name="length"/>
+            <br/>
+        </span>
+        
+        <span id="line-color">
+            <span class="form-desc">Color:</span>
+            <br/>
+            
+            <span class="form-desc">Red:</span>
+            <input  class="form-field" type="text" name="color-line-red" value="0"/>
+            <br/>
+            
+            <span class="form-desc">Green:</span>
+            <input  class="form-field" type="text" name="color-line-green" value="0"/>
+            <br/>
+            
+            <span class="form-desc">Blue:</span>
+            <input  class="form-field" type="text" name="color-line-blue" value="0"/>
+            <br/>
+        </span>
+        
+        <!-- Polygon -->
+        <span id="polygon-select">
+            <span class="form-desc">Polygon action:</span>
+            <select id="polygon-select-select" class="form-field" name="polygon-action">
+                <option value="create-polygon">Create polygon</option>
+                <option value="add-to-polygon">Add current point to polygon</option>
+                <option value="close-polygon">Close polygon</option>
+            </select>
+            <br/>
+        </span>
+        
+        <span id="polygon-fill">
+            <span class="form-desc">Fill color:</span>
+            <br/>
+            
+            <span class="form-desc">Red:</span>
+            <input class="form-field" type="text" name="color-polygon-fill-red" value="255"/>
+            <br/>
+            
+            <span class="form-desc">Green:</span>
+            <input class="form-field" type="text" name="color-polygon-fill-green" value="255"/>
+            <br/>
+            
+            <span class="form-desc">Blue:</span>
+            <input class="form-field" type="text" name="color-polygon-fill-blue" value="255"/>
+            <br/>
+        </span>
+        
+        <span id="polygon-stroke">
+            <span class="form-desc">Stroke color:</span>
+            <br/>
+            
+            <span class="form-desc">Red:</span>
+            <input class="form-field" type="text" name="color-polygon-stroke-red" value="0"/>
+            <br/>
+            
+            <span class="form-desc">Green:</span>
+            <input class="form-field" type="text" name="color-polygon-stroke-green" value="0"/>
+            <br/>
+            
+            <span class="form-desc">Blue:</span>
+            <input class="form-field" type="text" name="color-polygon-stroke-blue" value="0"/>
+            <br/>
+        </span>
+        
+        <!-- Rotation -->
+        <span id="rotation-angle">
+            <span class="form-desc">Angle:</span>
+            <input class="form-field" type="text" name="rotation-angle"/>
+            <br/>
+        </span>
+        
+        <input type="submit" value="Create" asp-page-handler="NewModule"/>
+    </form>
+</div>
+
+<script src="/js/new_module_form.js"></script>

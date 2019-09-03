@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LSystems", "LSystems\LSyste
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LSystemsTests", "LSystemsTests\LSystemsTests.csproj", "{B2E47DF6-5077-4FF2-890B-47D35FB4AFA9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LSystemsWebApp", "LSystemsWebApp\LSystemsWebApp.csproj", "{CEE0B9F3-120D-4076-9D45-B22AADD004D4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{B2E47DF6-5077-4FF2-890B-47D35FB4AFA9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B2E47DF6-5077-4FF2-890B-47D35FB4AFA9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B2E47DF6-5077-4FF2-890B-47D35FB4AFA9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CEE0B9F3-120D-4076-9D45-B22AADD004D4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CEE0B9F3-120D-4076-9D45-B22AADD004D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CEE0B9F3-120D-4076-9D45-B22AADD004D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CEE0B9F3-120D-4076-9D45-B22AADD004D4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

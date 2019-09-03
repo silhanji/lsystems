@@ -1,0 +1,80 @@
+@page
+@model LSystemsWebApp.Pages.Editor.Axiom
+
+@{
+    Layout = "Shared/_EditorLayout";
+    ViewData["MenuImage"] = "/svg/axiom.svg";
+}
+
+@if(Model.ErrorMsg != null) {
+    <div class="card">
+        @Model.ErrorMsg
+    </div>
+}
+
+<div class="card">
+    <h1>Axiom</h1>
+    <h2>Select modules forming axiom by draging them from the blue box into the green box</h2>
+    <div id="editor_axiom_modules-selection"
+         class="modules-selector-options">
+        @foreach (var module in Model.ModuleInfos)
+        {
+            <div class="editor_axiom_modules-module">
+                <span class="title">@module.ModuleName</span>
+                @foreach (var param in module.ParamNames)
+                {
+                    <div class="module-param">
+                        <span>@param</span>
+                        <input type="text" disabled/>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+    <div id="editor_axiom_modules-selected"
+         class="modules-selector-selected">
+        @foreach (var axiom in Model.AxiomInfos)
+        {
+            <div class="editor_axiom_modules-module">
+                <span class="title">@axiom.Name</span>
+                @foreach (var param in axiom.Params)
+                {
+                    <div class="module-param">
+                        <span>@param.Name</span>
+                        <input type="text" value="@param.Value"/>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+    <div id="editor_axiom_modules-bin"
+         class="modules-selector-bin">
+        
+    </div>
+</div>
+<form id="save-form" method="post" style="display: none">
+
+    <input id="save-form-submit" type="submit" asp-page-handler="SetAxiom"/>
+</form>
+
+<button id="save-button" type="button">Save</button>
+
+<script src="https://raw.githack.com/SortableJS/Sortable/master/Sortable.js"></script>
+<script src="/js/drag_form_helpers.js"></script>
+<script>
+    var source_list = document.getElementById("editor_axiom_modules-selection");
+    var target_list = document.getElementById("editor_axiom_modules-selected");
+    var bin = document.getElementById("editor_axiom_modules-bin");
+    var save_btn = document.getElementById('save-button');
+    var save_form = document.getElementById('save-form');
+    var save_form_submit = document.getElementById('save-form-submit');
+    
+    
+    
+    InitDragForm(source_list, target_list, bin, 'axiom');
+    
+    save_btn.addEventListener('click', function() {
+        SubmitData(target_list, save_form, 'axiom');
+        save_form_submit.click();
+    });    
+</script>

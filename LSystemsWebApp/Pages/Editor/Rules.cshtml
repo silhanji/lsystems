@@ -1,0 +1,207 @@
+@page
+@using System.Text
+@model LSystemsWebApp.Pages.Editor.Rules
+
+@{
+    Layout = "Shared/_EditorLayout";
+    ViewData["MenuImage"] = "/svg/rule.svg";
+}
+
+@if (Model.ErrorMsg != null)
+{
+    <div class="card">
+        @Model.ErrorMsg;
+    </div>
+}
+
+<div class="card">
+    <h1>Rules</h1>
+    <h2>Define rules used in LSystem</h2>
+    
+    @if (Model.RuleInfos.Count == 0)
+    {
+        <p>No rule was defined, start by clicking on button below.</p>
+    }
+    else
+    {
+        <table>
+            <tr>
+                <th>Left context</th>
+                <th>Source module</th>
+                <th>Right context</th>
+                <th>Parametric conditions</th>
+                <th>Next generation</th>
+                <th></th>
+            </tr>
+            @for(int i = 0; i < Model.RuleInfos.Count; i++)
+            {
+                var info = Model.RuleInfos[i];
+                <tr>
+                    <td>
+                        @Model.BuildContextDescription(info.LeftContext)
+                    </td>
+                    <td>
+                        @info.SourceModule
+                    </td>
+                    <td>
+                        @Model.BuildContextDescription(info.RightContext)
+                    </td>
+                    @if (info.ParametricConditions != null)
+                    {
+                        <td>@info.ParametricConditions.ToString()</td>
+                    }
+                    else
+                    {
+                        <td></td>
+                    }
+                    <td>
+                        @Model.BuildNextGenDescription(info.NextGeneration)
+                    </td>
+                    <td>
+                        <form method="post">
+                            <input name="rule-index" type="number" value="@i" hidden/>
+                            <button asp-page-handler="RemoveRule">
+                                <img src="/svg/clear.svg" alt="Remove rule"/>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </table>
+    }
+</div>
+<form method="post">
+    <input type="submit" value="Add new rule" asp-page-handler="CreateRule"/>
+</form>
+
+@if (Model.DisplayEditor)
+{
+    <div class="card">
+        <h1>New rule</h1>
+        <form id="create-form" method="post">
+            <span class="form-desc">Source module:</span>
+            <select class="form-field" name="source-module">
+                @foreach (var module in Model.ModuleInfos)
+                {
+                    <option>@module.ModuleName</option>
+                }
+            </select>
+            <br/>
+            <span class="form-desc">Next generation:</span>
+            <div id="editor_rules_modules-selection-next"
+                 class="modules-selector-options">
+                @foreach (var module in Model.ModuleInfos)
+                {
+                    <div class="editor_axiom_modules-module">
+                        <span class="title">@module.ModuleName</span>
+                        @foreach (var param in module.ParamNames)
+                        {
+                            <div class="module-param">
+                                <span>@param</span>
+                                <input type="text" disabled/>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+            <div id="editor_rules_modules-selected-next" 
+                 class="modules-selector-selected">
+                    
+            </div>
+            <div id="editor_rules_modules-bin-next" 
+                 class="modules-selector-bin">
+                    
+            </div>
+            <button id="show-advanced" type="button">Show advanced options</button>
+            <br/>
+            <div id="advanced" style="display: none;">
+                <span class="form-desc">Left context:</span>
+                <div id="editor_rules_modules-selection-left"
+                     class="modules-selector-options">
+                    @foreach (var module in Model.ModuleInfos)
+                    {
+                        <div class="editor_axiom_modules-module">
+                            <span class="title">@module.ModuleName</span>
+                        </div>
+                    }
+                </div>
+                <div id="editor_rules_modules-selected-left" 
+                     class="modules-selector-selected">
+                        
+                </div>
+                <div id="editor_rules_modules-bin-left" 
+                     class="modules-selector-bin">
+                        
+                </div>
+                <span class="form-desc">Right context:</span>
+                <div id="editor_rules_modules-selection-right"
+                     class="modules-selector-options">
+                    @foreach (var module in Model.ModuleInfos)
+                    {
+                        <div class="editor_axiom_modules-module">
+                            <span class="title">@module.ModuleName</span>
+                        </div>
+                    }
+                </div>
+                <div id="editor_rules_modules-selected-right" 
+                     class="modules-selector-selected">
+                        
+                </div>
+                <div id="editor_rules_modules-bin-right" 
+                     class="modules-selector-bin">
+                        
+                </div>
+            </div>
+            
+            <input id="save-button" type="button" value="Add rule"/>
+            <input id="submit-button" type="submit" asp-page-handler="NewRule" hidden/>
+        </form>
+    </div>
+}
+
+<script src="https://raw.githack.com/SortableJS/Sortable/master/Sortable.js"></script>
+<script src="/js/drag_form_helpers.js"></script>
+<script>
+    var advanced_toggle = document.getElementById('show-advanced');
+    advanced_toggle.addEventListener('click', function() {toogle_advanced(advanced_toggle)});
+
+    var form = document.getElementById('create-form');
+    var save_btn = document.getElementById('save-button');
+    var submit_btn = document.getElementById('submit-button');
+    
+    //Next Generation
+    var source_list_next = document.getElementById("editor_rules_modules-selection-next");
+    var target_list_next = document.getElementById("editor_rules_modules-selected-next");
+    var bin_next = document.getElementById("editor_rules_modules-bin-next");
+    //Left Context
+    var source_list_left = document.getElementById("editor_rules_modules-selection-left");
+    var target_list_left = document.getElementById("editor_rules_modules-selected-left");
+    var bin_left = document.getElementById("editor_rules_modules-bin-left");
+    //Right Context
+    var source_list_right = document.getElementById("editor_rules_modules-selection-right");
+    var target_list_right = document.getElementById("editor_rules_modules-selected-right");
+    var bin_right = document.getElementById("editor_rules_modules-bin-right");
+    
+    InitDragForm(source_list_next, target_list_next, bin_next, 'next');
+    InitDragForm(source_list_left, target_list_left, bin_left, 'left');
+    InitDragForm(source_list_right, target_list_right, bin_right, 'right');
+    
+    save_btn.addEventListener('click', function() {
+       SubmitData(target_list_next, form, 'next');
+       SubmitData(target_list_left, form, 'left');
+       SubmitData(target_list_right, form, 'right');
+       submit_btn.click();
+    });
+    
+    function toogle_advanced(button) {
+        console.log("toggling");
+        var advanced = document.getElementById('advanced');
+        if(advanced.style.display == 'none') {
+            advanced.style.display = 'block';
+            button.innerHTML = 'Hide advanced options';
+        } else {
+            advanced.style.display = 'none';
+            button.innerHTML = 'Show advanced options'
+        }
+    }    
+</script>

@@ -1,0 +1,32 @@
+@page
+@model LSystemsWebApp.Pages.Editor.Result
+
+@{
+    Layout = "Shared/_EditorLayout";
+    ViewData["MenuImage"] = "/svg/result.svg";
+}
+
+@if (Model.ErrorMsg != null)
+{
+    <div class="card">
+        @Model.ErrorMsg
+    </div>
+}
+
+<div class="card">
+    <h1>Result</h1>
+    <h2>Choose number of generations:</h2>
+    <form method="post">
+        <span class="form-desc">Generations number:</span>
+        <input class="form-field" type="number" value="@Model.GenerationsCount" name="generation-count"/>
+        <br>
+        <span class="form-desc">Percent randomization:</span>
+        <input class="form-field" type="number" value="@Model.RandomizationPercent" name="randomization-percent"/>
+        <br/>
+
+        <input type="submit" value="Generate"/>
+    </form>
+    <div id="svg-container">
+        @Html.Raw(Model.Svg)
+    </div>
+</div>

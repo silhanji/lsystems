@@ -1,0 +1,77 @@
+@page
+@using System.Text
+@model LSystemsWebApp.Pages.Editor.Modules
+
+@{
+    Layout = "Shared/_EditorLayout";
+    ViewData["MenuImage"] = "/svg/module.svg";
+}
+
+@if (Model.ErrorMsg != null)
+{
+    <div class="card">
+        @Model.ErrorMsg
+    </div>
+}
+
+<div class="card" xmlns="http://www.w3.org/1999/html">
+    <h1>Modules</h1>
+    <h2>Define modules which will be used in LSystem</h2>
+    @if (Model.ModuleInfos.Count == 0)
+    {
+        <p>No Module was defined, start by clicking on button below.</p>
+    }
+    else
+    {
+        <table>
+            <tr>
+                <th>Name</th>
+                <th>Parameters</th>
+                <th>Representation</th>
+                <th></th>
+            </tr>
+            @for(int infoIndex = 0; infoIndex < Model.ModuleInfos.Count; infoIndex++)
+            {
+                var info = Model.ModuleInfos[infoIndex];
+                <tr>
+                    <td>@info.ModuleName</td>
+                    <td>
+                        @{
+                            var builder = new StringBuilder();
+                            if (info.ParamNames.Count != 0)
+                            {
+                                for (int paramIndex = 0; paramIndex < info.ParamNames.Count - 1; paramIndex++)
+                                {
+                                    builder.Append(info.ParamNames[paramIndex]);
+                                    builder.Append(", ");
+                                }
+                                builder.Append(info.ParamNames[info.ParamNames.Count - 1]);
+                            }
+                        }
+                        @builder.ToString()
+                    </td>
+                    <td>
+                        @info.GetRepresentationSummary()
+                    </td>
+                    <td>
+                        <form method="post">
+                            <input name="module-index" type="number" value="@infoIndex" hidden />
+                            <button asp-page-handler="RemoveModule">
+                                <img src="/svg/clear.svg" alt="Remove module"/>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </table>
+    }
+</div>
+
+<form method="post">  
+    <input type="submit" value="Create new module" asp-page-handler="CreateModule"/>
+</form>
+
+@if (Model.DisplayEditor)
+{
+    <partial name="Shared/_NewModuleForm"> </partial>
+}
