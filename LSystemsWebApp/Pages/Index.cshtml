@@ -1,0 +1,24 @@
+﻿@page
+@using Microsoft.AspNetCore.Http
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Welcome</h1>
+    @Html.Raw(Model.Svg)<br/>
+    Form data: @Model.Text<br/>
+    Was posted before: @HttpContext.Session.GetString("postinfo")
+    <form method="post">
+        <input type="text" name="test-input"/>
+        <input type="text" name="form-id" value="form1" hidden/>
+        <input type="text" name="form-id" value="form12" hidden/>
+        <button asp-page-handler="SubmitOne">Submit</button>
+    </form>
+    <form method="post">
+        <input type="text" name="test-input"/>
+        <input type="text" name="form-id" value="form2" hidden/>
+        <button asp-page-handler="SubmitTwo">Submit</button>
+    </form>
+</div>

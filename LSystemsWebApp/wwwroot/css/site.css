@@ -1,0 +1,242 @@
+﻿/* Please see documentation at https://docs.microsoft.com/aspnet/core/client-side/bundling-and-minification
+for details on configuring this project to bundle and minify static web assets. */
+
+a.navbar-brand {
+    white-space: normal;
+    text-align: center;
+    word-break: break-all;
+}
+
+/* Sticky footer styles
+-------------------------------------------------- */
+html {
+    font-size: 14px;
+}
+@media (min-width: 768px) {
+    html {
+        font-size: 16px;
+    }
+}
+
+.border-top {
+    border-top: 1px solid #e5e5e5;
+}
+.border-bottom {
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.box-shadow {
+    box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .05);
+}
+
+button.accept-policy {
+    font-size: 1rem;
+    line-height: inherit;
+}
+
+/* Sticky footer styles
+-------------------------------------------------- */
+html {
+    position: relative;
+    min-height: 100%;
+}
+
+body {
+    /* Margin bottom by footer height */
+    margin-bottom: 60px;
+}
+.footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    white-space: nowrap;
+    /* Set the fixed height of the footer here */
+    height: 60px;
+    line-height: 60px; /* Vertically center the text there */
+}
+/* Custom Styles
+----------------------------------------------
+ */
+:root {
+    --sidebar-width: 196px;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+}
+
+a {
+    text-decoration: none;
+    color: unset;
+}
+
+a:hover {
+    text-decoration: none;
+    color: unset;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 8px;
+    text-align: left;
+    border: 1px solid #d5d5d5;
+    min-width: 128px;
+}
+
+#sidebar {
+    width: var(--sidebar-width);
+    height: 100vh;
+    float: left;
+    padding: 8px;
+    box-shadow: 0 0 2px #424242;
+}
+
+#sidebar img {
+    display: block;
+    width: 100%;
+    height: auto;
+    padding: 32px;
+}
+
+#sidebar a {
+    display: block;
+    width: calc(100% - 32px);
+    line-height: 32px;
+    padding: 16px;
+}
+
+#sidebar a img {
+    display: inline-block;
+    width: 32px;
+    height: 32px;
+    margin-right: 8px;
+    padding: 4px;
+}
+
+#main-content {
+    display: block;
+    width: calc(100vw - var(--sidebar-width));
+    height: 100vh;
+    margin-left: var(--sidebar-width);
+    padding: 32px;
+    background-color: #f2f2f2;
+}
+
+.card {
+    width: 100%;
+    background-color: white;
+    box-shadow: 0 0 2px #424242;
+    border-radius: 0;
+    padding: 24px;
+}
+
+.card h1 {
+    font-weight: bold;
+    font-size: 5ex;
+    margin-bottom: 8px;
+}
+
+.card h2 {
+    font-style: italic;
+    font-size: unset;
+    margin-bottom: 24px;
+}
+
+/* Editor - Modules Section
+--------------------
+ */
+
+.form-desc {
+    display: inline-block;
+    width: 196px;
+}
+
+.form-field {
+    width: 196px;
+    display: inline-block;
+}
+
+/* Editor - Axiom Section
+--------------------
+ */
+.modules-selector-options {
+    display: block;
+
+    width: 100%;
+    min-height: 64px;
+    padding: 16px;
+    
+    border-radius: 8px;
+    border: 4px dashed #8181ff;
+    background-color: #b4b4ff;
+    
+    margin-bottom: 16px;
+}
+
+.modules-selector-selected {
+    display: block;
+    width: 100%;
+    min-height: 64px;
+    
+    padding: 16px;
+    border-radius: 8px;
+    border: 4px dashed #4effa5;
+    background-color: #9affcc;
+    
+    margin-bottom: 16px;
+}
+
+.modules-selector-bin {
+    width: 33%;
+    height: 64px;
+    margin-left: 33%;
+    display: block;
+    border-radius: 8px;
+    border: 4px dashed #ff4e4e;
+    background-color: #ff9a9a;
+    background-image: url("/svg/bin.svg");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    
+    text-align: center;
+}
+
+.editor_axiom_modules-module {
+    display: inline-block;
+    background-color: white;
+    margin-right: 8px;
+    margin-bottom: 8px;
+    padding: 4px;
+    box-shadow: 0 0 2px #424242;
+    
+    vertical-align: top;
+    
+    cursor: grab;
+}
+
+.editor_axiom_modules-module .title {
+    display: inline-block;
+    font-weight: bold;
+    padding: 0 8px;
+}
+
+.editor_axiom_modules-module-param input {
+    width: 8ex;
+}
+
+/*
+Result Section
+ */
+#svg-container {
+    max-height: 75vh;
+}
+
+#svg-container svg {
+    width: 100%;
+    height: 100%;
+}
