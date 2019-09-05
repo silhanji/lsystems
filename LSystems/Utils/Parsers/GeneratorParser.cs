@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using LSystems.Core;
 
-namespace LSystems.Parsers
+namespace LSystems.Utils.Parsers
 {
 	/// <summary>
 	/// Parser which expects axiom on first line and each rule on other lines

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Xml.Serialization;
 using LSystems;
+using LSystems.Utils;
 using Microsoft.AspNetCore.Http;
 
 namespace LSystemsWebApp
@@ -86,7 +87,8 @@ namespace LSystemsWebApp
 			SavePosition,
 			LoadPosition
 		}
-
+		
+		[XmlInclude(typeof(NoneInfo))]
 		[XmlInclude(typeof(LineInfo))]
 		[XmlInclude(typeof(MoveInfo))]
 		[XmlInclude(typeof(RotationInfo))]
@@ -118,6 +120,20 @@ namespace LSystemsWebApp
 
 		}
 
+		[Serializable]
+		public class NoneInfo : RepresentationActionInfo
+		{
+			public override string GetDescription()
+			{
+				return "None";
+			}
+
+			public override Action<Canvas> GetAction(ModuleInfo info)
+			{
+				return canvas => { };
+			}
+		}
+		
 		[Serializable]
 		public class LineInfo : RepresentationActionInfo
 		{

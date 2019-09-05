@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
+using LSystems.Core;
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("LSystemsTests")]
 
-namespace LSystems.Parsers
+namespace LSystems.Utils.Parsers
 {
 	public class ModuleParser<T>
 	{

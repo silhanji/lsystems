@@ -4,7 +4,8 @@ using System.IO;
 using System.Text;
 using System.Xml.Serialization;
 using LSystems;
-using LSystems.Parsers;
+using LSystems.Utils;
+using LSystems.Utils.Parsers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -39,6 +40,11 @@ namespace LSystemsWebApp.Pages.Editor
 			}
 			else
 			{
+				if (count < 0)
+				{
+					ErrorMsg = "Generations number must be positive";
+					return;
+				}
 				GenerationsCount = count;
 			}
 
@@ -96,8 +102,6 @@ namespace LSystemsWebApp.Pages.Editor
 			DrawingAction[] elements = CreateDrawingActions(generatorParser.ModuleParser);
 			
 			var creator = new VectorDrawer(elements);
-
-			ErrorMsg = input;
 
 			if (RandomizationPercent != 0)
 			{

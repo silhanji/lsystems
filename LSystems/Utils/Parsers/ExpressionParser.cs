@@ -4,14 +4,26 @@ using System.Text;
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("LSystemsTests")]
 
-namespace LSystems.Parsers
+namespace LSystems.Utils.Parsers
 {
 	#region IDENTIFIERS
-	
+
+	/// <summary>
+	/// Delegate used in parsing process
+	/// </summary>
+	/// <param name="parameters">Values of parameters</param>
+	/// <typeparam name="T">Value of expression after evaluation</typeparam>
 	public delegate T Expression<T>(T[] parameters);
 
+	/// <summary>
+	/// Base class for all types of identifiers, (variables, functions, ...)
+	/// </summary>
 	public abstract class Identifier
 	{
+		/// <summary>
+		/// Characters used in parsed expression to represent this identifier.
+		/// Cannot contain point, comma or brackets
+		/// </summary>
 		public readonly string Representation;
 
 		protected Identifier(string representation)
@@ -29,8 +41,16 @@ namespace LSystems.Parsers
 		}
 	}
 
+	/// <summary>
+	/// Represents function which has only one argument, written directly after identifier
+	/// </summary>
+	/// <typeparam name="T">Type used in Expressions</typeparam>
 	public class UnaryOperator<T> : Identifier
 	{
+		/// <summary>
+		/// Delegate returning Expression after it is provided with Expression which corresponds to single argument
+		/// of UnaryOperator
+		/// </summary>
 		public readonly Func<Expression<T>, Expression<T>> Handler;
 		
 		public UnaryOperator(string representation, Func<Expression<T>, Expression<T>> handler) : base(representation)
@@ -39,9 +59,23 @@ namespace LSystems.Parsers
 		}
 	}
 
+	/// <summary>
+	/// Represents function with exactly two arguments, where one is written directly in front of BinaryOperators
+	/// representation and the other is written directly behind BinaryOperator representation
+	/// </summary>
+	/// <typeparam name="T">Type used in Expressions</typeparam>
 	public class BinaryOperator<T> : Identifier
 	{
+		/// <summary>
+		/// Delegate returning Expression after is is provided with Expressions which corresponds to arguments of
+		/// BinaryOperator. Left argument corresponds to first Expression, right argument corresponds to second
+		/// Expression
+		/// </summary>
 		public readonly Func<Expression<T>, Expression<T>, Expression<T>> Handler;
+		/// <summary>
+		/// Number indicating priority of operator, operators with higher priority are evaluated first.
+		/// Note: BinaryOperator has always lower priority than any other Identifier
+		/// </summary>
 		public readonly int Priority;
 
 		public BinaryOperator(string representation, 
@@ -52,8 +86,18 @@ namespace LSystems.Parsers
 		}
 	}
 
+	/// <summary>
+	/// Represents function with arbitrary number of arguments. Arguments must be closed in bracket which starts
+	/// directly after function representation and separated by commas.
+	/// </summary>
+	/// <typeparam name="T">Type used in Expressions</typeparam>
 	public class Function<T> : Identifier
 	{
+		/// <summary>
+		/// Delegate returning Expression after it is provided with array of Expressions representing function
+		/// arguments. Element at nth index of array corresponds to n+1 argument of function (e.g. element at index 0
+		/// corresponds to first argument).
+		/// </summary>
 		public readonly Func<Expression<T>[], Expression<T>> Handler;
 
 		public Function(string representation, Func<Expression<T>[], Expression<T>> handler) : base(representation)
@@ -62,8 +106,14 @@ namespace LSystems.Parsers
 		}
 	}
 
+	/// <summary>
+	/// Represents variable which can have assigned value during evaluation of Expression
+	/// </summary>
 	public class Variable : Identifier
 	{
+		/// <summary>
+		/// Represents Index of this variable value when Expression is Evaluated
+		/// </summary>
 		public readonly int Index;
 
 		public Variable(string representation, int index) : base(representation)
@@ -76,6 +126,11 @@ namespace LSystems.Parsers
 	#endregion
 
 	#region EXPRESSION_PARSER
+	/// <summary>
+	/// Base class for all ExpressionParsers
+	/// Uses recursion to parse string into one expression which can be evaluated later.
+	/// </summary>
+	/// <typeparam name="T">Type used in Expressions, also type which corresponds to values of variables</typeparam>
 	public abstract class ExpressionParser<T>
 	{
 		private readonly Dictionary<string, UnaryOperator<T>> _unaryOperators;
@@ -83,9 +138,19 @@ namespace LSystems.Parsers
 		private readonly Dictionary<string, Function<T>> _functions;
 		private readonly Dictionary<string, Variable> _variables;
 
+		/// <summary>
+		/// Collection of all representations used at least in one of _unaryOperators, _binaryOperators, _functions or
+		/// _variables
+		/// </summary>
 		private readonly HashSet<string> _registredIdentifiers;
 		
+		/// <summary>
+		/// Recommended value for priority variable in Low priority BinaryOperators
+		/// </summary>
 		public const int PRIORITY_LOW = 0;
+		/// <summary>
+		/// Recommended value for priority variable in High priority BinaryOperators
+		/// </summary>
 		public const int PRIORITY_HIGH = 1;
 
 		private readonly int _minPriority;
@@ -165,6 +230,11 @@ namespace LSystems.Parsers
 			}
 		}
 
+		/// <summary>
+		/// Creates Expression from string input
+		/// </summary>
+		/// <param name="input">string containing representation of Expression</param>
+		/// <returns>Expression which returns value of string when it is provided with values for variables</returns>
 		public Expression<T> Parse(string input)
 		{
 			var tokenizer = new Tokenizer(_registredIdentifiers);
@@ -173,10 +243,22 @@ namespace LSystems.Parsers
 			return ParseBinaryOperator(tokens, _minPriority, 0, tokens.Length);
 		}
 
+		/// <summary>
+		/// Method parsing binary operator if some is present, or calling ParseUnaryOperator if none binary operator
+		/// is found.
+		/// </summary>
+		/// <param name="tokens">Array of tokens which forms entire expression</param>
+		/// <param name="priority">Priority of currently parsed binary operator, method won't parse binary operators
+		/// with different priority</param>
+		/// <param name="first">Index of first token to search for BinaryOperator</param>
+		/// <param name="count">Number of tokens which can be searched for BinaryOperator</param>
+		/// <returns>Expression which returns value of parsed BinaryOperator</returns>
+		/// <seealso cref="Token"/>
+		/// <seealso cref="Tokenizer"/>
 		private Expression<T> ParseBinaryOperator(Token[] tokens, int priority, int first, int count)
 		{
 			if (priority > _maxPriority)
-				return ParseUnaryOperator(tokens, first, count);
+				return ParseUnaryOperator(tokens, first, count); //No oher binary operator can exists
 
 			int bracketDepth = 0;
 			for (int i = first; i < first + count; i++)
@@ -188,21 +270,33 @@ namespace LSystems.Parsers
 					else if (tokens[i].Value == ")")
 						bracketDepth--;
 				} else if (tokens[i].Type == Token.TokenType.Identifier 
-				           && bracketDepth == 0
-				           && i != first
-				           && i != first + count - 1
-				           && _binaryOperators.TryGetValue(tokens[i].Value, out var op)
-				           && op.Priority == priority)
+				           && bracketDepth == 0	//Is not nested
+				           && i != first	//Has left argument
+				           && i != first + count - 1	//Has right argument
+				           && _binaryOperators.TryGetValue(tokens[i].Value, out var op) //Corresponds to some BinaryOperator
+				           && op.Priority == priority)	//Has requested priority
 				{
+					//Parse left argument, it is sure that if some BinaryOperator is on left side, it must have priority
+					//higher than current operator
 					var leftSide = ParseBinaryOperator(tokens, priority + 1, first, (i - first));
 					var rightSide = ParseBinaryOperator(tokens, priority, i + 1, count - i -1 + first);
 					return op.Handler(leftSide, rightSide);
 				}
 			}
 
-			return ParseBinaryOperator(tokens, priority + 1, first, count);
+			//Parse binary operators with higher priority
+			return ParseBinaryOperator(tokens, priority + 1, first, count); //TODO: Replace with loop and managed recursion
 		}
 
+		/// <summary>
+		/// Method parsing unary operator if some is found or calling ParseIdentifier if no unary operator is found
+		/// </summary>
+		/// <param name="tokens">Array of tokens which corresponds to entire expression</param>
+		/// <param name="first">Index of tokens which should contain UnaryOperator</param>
+		/// <param name="count">Number of tokens used in evaluation of argument of UnaryOperator</param>
+		/// <returns>Expression which returns value of parsed UnaryOperator</returns>
+		/// <seealso cref="Token"/>
+		/// <seealso cref="Tokenizer"/>
 		private Expression<T> ParseUnaryOperator(Token[] tokens, int first, int count)
 		{
 			if (tokens[first].Type == Token.TokenType.Identifier
@@ -215,19 +309,32 @@ namespace LSystems.Parsers
 			return ParseIdentifier(tokens, first, count);
 		}
 
+		/// <summary>
+		/// Method parsing everything which is not operator
+		/// </summary>
+		/// <param name="tokens">Array of Tokens which corresponds to entire expression</param>
+		/// <param name="first">Index of first Token to be evaluated</param>
+		/// <param name="count">Number of tokens to be evaluated</param>
+		/// <returns>Expression which returns value of parsed Identifier</returns>
+		/// <exception cref="ParserException">Thrown if Tokens can be parsed into expression (e.g. unknown identifiers,
+		/// missing arguments, ...)</exception>
+		/// <seealso cref="Token"/>
+		/// <seealso cref="Tokenizer"/>
 		private Expression<T> ParseIdentifier(Token[] tokens, int first, int count)
 		{
 			if (tokens[first].Type == Token.TokenType.Control && tokens[first].Value == "(" &&
 			    tokens[first + count - 1].Type == Token.TokenType.Control && tokens[first + count - 1].Value == ")")
 			{
-				return ParseBinaryOperator(tokens, _minPriority, first + 1, count - 2);
-			} else if (tokens[first].Type == Token.TokenType.Identifier)
+				//Bracket can contain anything
+				return ParseBinaryOperator(tokens, _minPriority, first + 1, count - 2); 
+			} 
+			else if (tokens[first].Type == Token.TokenType.Identifier)
 			{
-				if (count == 1 && _variables.TryGetValue(tokens[first].Value, out var variable))
+				if (count == 1 && _variables.TryGetValue(tokens[first].Value, out var variable)) //Token is variable
 				{
 					return args => args[variable.Index];
 				} 
-				else if (_functions.TryGetValue(tokens[first].Value, out var function) 
+				else if (_functions.TryGetValue(tokens[first].Value, out var function) //Token is function
 				         && tokens[first+1].Value == "("
 				         && tokens[first+count-1].Value == ")")
 				{
@@ -267,23 +374,39 @@ namespace LSystems.Parsers
 
 					return function.Handler(arguments.ToArray());
 				}
-			} else if (tokens[first].Type == Token.TokenType.Literal && count == 1)
+			} else if (tokens[first].Type == Token.TokenType.Literal && count == 1) //Token is literal
 			{
 				return ParseLiteral(tokens[first]);
 			}
 			
+			//Token is not identifier or literal
 			throw new ParserException("Unable to parse " + count + " tokens starting at index " + first);
 		}
 
+		/// <summary>
+		/// Parses literal from token
+		/// </summary>
+		/// <param name="token">Token whose value will be returned in Expression</param>
+		/// <returns>Expression which returns value of given token</returns>
 		private Expression<T> ParseLiteral(Token token)
 		{
 			T literal = ParseLiteral(token.Value);
 			return args => literal;
 		}
 
+		/// <summary>
+		/// Abstract class which determines how to handle strings which does not correspond to any identifiers
+		/// For example if T is some numeric value, it's parsing from string should be done in this method
+		/// </summary>
+		/// <param name="representation">string with unknown value</param>
+		/// <returns>Value of string</returns>
 		public abstract T ParseLiteral(string representation);
 	}
 
+	/// <summary>
+	/// ExpressionParser which is specialized on int.
+	/// Serves for parsing any expression containing Integers
+	/// </summary>
 	public class IntExpressionParser : ExpressionParser<int>
 	{
 		public IntExpressionParser(UnaryOperator<int>[] unaryOperators, BinaryOperator<int>[] binaryOperators,
@@ -293,6 +416,12 @@ namespace LSystems.Parsers
 			
 		}
 
+		/// <summary>
+		/// Parses string into int
+		/// </summary>
+		/// <param name="representation">string representation of integer</param>
+		/// <returns>Int value of representation</returns>
+		/// <exception cref="ParserException">Thrown if representation cannot be parsed into integer</exception>
 		public override int ParseLiteral(string representation)
 		{
 			if (int.TryParse(representation, out int value))
@@ -302,6 +431,10 @@ namespace LSystems.Parsers
 		}
 	}
 
+	/// <summary>
+	/// ExpressionParser which is specialized on double
+	/// Serves for parsing any expression containing real values (represented as Double)
+	/// </summary>
 	public class DoubleExpressionParser : ExpressionParser<double>
 	{
 		public DoubleExpressionParser(UnaryOperator<double>[] unaryOperators, BinaryOperator<double>[] binaryOperators,
@@ -311,6 +444,12 @@ namespace LSystems.Parsers
 			
 		}
 
+		/// <summary>
+		/// Parses string into double
+		/// </summary>
+		/// <param name="representation">string representation of real value</param>
+		/// <returns>double value of representation</returns>
+		/// <exception cref="ParserException">Thrown if representation cannot be parsed into double</exception>
 		public override double ParseLiteral(string representation)
 		{
 			if (double.TryParse(representation, out double value))
@@ -320,6 +459,10 @@ namespace LSystems.Parsers
 		}
 	}
 
+	/// <summary>
+	/// ExpressionParser specialized on bools
+	/// Serves for parsing any expression containing bool values
+	/// </summary>
 	public class BoolExpressionParser : ExpressionParser<bool>
 	{
 		public BoolExpressionParser(UnaryOperator<bool>[] unaryOperators, BinaryOperator<bool>[] binaryOperators,
@@ -329,6 +472,12 @@ namespace LSystems.Parsers
 			
 		}
 
+		/// <summary>
+		/// Parses string into bool
+		/// </summary>
+		/// <param name="representation">string containing "true" or "false"</param>
+		/// <returns>true if representation contained "true", false if representation contained "false"</returns>
+		/// <exception cref="ParserException">Thrown if representation doesn't contain true or false</exception>
 		public override bool ParseLiteral(string representation)
 		{
 			var normalized = representation.ToLower();
@@ -345,21 +494,44 @@ namespace LSystems.Parsers
 
 	#region EXPRESSION_PARSER_FACTORIES
 
+	/// <summary>
+	/// Base class for Factories creating ExpressionParsers.
+	/// Use of these factories is mainly to simplify creation of ExpressionParsers by predefining common operators and
+	/// functions 
+	/// </summary>
+	/// <typeparam name="T"></typeparam>
 	public abstract class ExpressionParserFactory<T>
 	{
 		public abstract UnaryOperator<T>[] UnaryOperators { get; set; }
 		public abstract BinaryOperator<T>[] BinaryOperators { get; set; }
 		public abstract Function<T>[] Functions { get; set; }
 
+		/// <summary>
+		/// Implementations should create ExpressionParsers which contain exactly UnaryOperators, BinaryOperators and
+		/// Functions defined as properties in factory, plus Variables provided as argument
+		/// </summary>
+		/// <param name="variables">Variables used in ExpressionParser creation</param>
+		/// <returns>ExpressionParser with given properties</returns>
 		public abstract ExpressionParser<T> Create(Variable[] variables);
 
+		/// <summary>
+		/// Creates ExpressionParser by creating Variables from string array and than calling Create(Variable[])
+		/// </summary>
+		/// <param name="variableNames">string array where each element represents one variable</param>
+		/// <returns>ExpressionParser with given properties</returns>
 		public ExpressionParser<T> Create(string[] variableNames)
 		{
 			var variables = CreateVariables(variableNames);
 			return Create(variables);
 		}
 
-		public static Variable[] CreateVariables(string[] variableNames)
+		/// <summary>
+		/// Creates Variable array out of string array. Assumes that Variable whose name is stored on nth position
+		/// corresponds to nth value in parsed Expression
+		/// </summary>
+		/// <param name="variableNames">array containing variable names which will be turned into variables</param>
+		/// <returns>Array of variables whose names correspond to array provided in argument</returns>
+		private static Variable[] CreateVariables(string[] variableNames)
 		{
 			var variables = new Variable[variableNames.Length];
 			for(int i = 0; i < variableNames.Length; i++)
@@ -371,6 +543,10 @@ namespace LSystems.Parsers
 		}
 	}
 	
+	/// <summary>
+	/// ExpressionParserFactory specialized on int
+	/// Predefines unary operator - and binary operators +, -, *, /
+	/// </summary>
 	public class IntExpressionParserFactory : ExpressionParserFactory<int>
 	{
 		public override UnaryOperator<int>[] UnaryOperators { get; set; }
@@ -406,6 +582,10 @@ namespace LSystems.Parsers
 		}
 	}
 
+	/// <summary>
+	/// ExpressionParserFactory specialized on double
+	/// Predefines unary operator - and binary operators +, -, *, /
+	/// </summary>
 	public class DoubleExpressionParserFactory : ExpressionParserFactory<double>
 	{
 		public override UnaryOperator<double>[] UnaryOperators { get; set; }
@@ -441,6 +621,10 @@ namespace LSystems.Parsers
 		}
 	}
 	
+	/// <summary>
+	/// ExpressionParserFactory specialized on bool
+	/// Predefines unary operator ! (invert bool value) and binary operators || (or) and && (and)
+	/// </summary>
 	public class BoolExpressionParserFactory : ExpressionParserFactory<bool>
 	{
 		public override UnaryOperator<bool>[] UnaryOperators { get; set; }

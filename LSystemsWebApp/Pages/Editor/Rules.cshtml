@@ -9,7 +9,7 @@
 
 @if (Model.ErrorMsg != null)
 {
-    <div class="card">
+    <div class="card error">
         @Model.ErrorMsg;
     </div>
 }
@@ -60,7 +60,7 @@
                     <td>
                         <form method="post">
                             <input name="rule-index" type="number" value="@i" hidden/>
-                            <button asp-page-handler="RemoveRule">
+                            <button class="flat-button" asp-page-handler="RemoveRule">
                                 <img src="/svg/clear.svg" alt="Remove rule"/>
                             </button>
                         </form>
@@ -71,7 +71,7 @@
     }
 </div>
 <form method="post">
-    <input type="submit" value="Add new rule" asp-page-handler="CreateRule"/>
+    <button type="submit" asp-page-handler="CreateRule">Add new rule"</button>
 </form>
 
 @if (Model.DisplayEditor)

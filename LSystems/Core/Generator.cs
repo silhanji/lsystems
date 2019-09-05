@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace LSystems
+namespace LSystems.Core
 {
 	public class Generator<T>
 	{

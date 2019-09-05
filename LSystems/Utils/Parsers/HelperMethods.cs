@@ -1,7 +1,10 @@
 using System;
 
-namespace LSystems.Parsers
+namespace LSystems.Utils.Parsers
 {
+	/// <summary>
+	/// Class containing useful methods which does not belong to some other specific class
+	/// </summary>
 	public static class HelperMethods
 	{
 		/// <summary>

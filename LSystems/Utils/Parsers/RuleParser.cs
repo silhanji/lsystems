@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using LSystems.Core;
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("LSystemsTests")]
 
-namespace LSystems.Parsers
+namespace LSystems.Utils.Parsers
 {
 	/// <summary>
 	/// Parser designed to create Rule objects from text representation of LSystems

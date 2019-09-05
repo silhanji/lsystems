@@ -2,8 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace LSystems.Parsers
+namespace LSystems.Utils.Parsers
 {
+	/// <summary>
+	/// Class containing extension methods for string which can be useful when working with arithmetic expressions
+	/// </summary>
 	public static class StringExtension
 	{
 		/// <summary>

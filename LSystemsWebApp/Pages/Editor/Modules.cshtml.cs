@@ -50,7 +50,7 @@ namespace LSystemsWebApp.Pages.Editor
 			{
 				case "none":
 					moduleInfo.Representation = ModuleInfo.RepresentationAction.None;
-					moduleInfo.RepresentationInfo = null;
+					moduleInfo.RepresentationInfo = new ModuleInfo.NoneInfo();
 					break;
 				case "line":
 					var lineInfo = new ModuleInfo.LineInfo();

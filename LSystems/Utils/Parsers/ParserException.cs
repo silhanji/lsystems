@@ -1,6 +1,6 @@
 using System;
 
-namespace LSystems.Parsers
+namespace LSystems.Utils.Parsers
 {
 	[Serializable()]
 	public class ParserException : Exception

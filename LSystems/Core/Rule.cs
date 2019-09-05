@@ -1,7 +1,6 @@
-using System;
 using System.Collections.Generic;
 
-namespace LSystems
+namespace LSystems.Core
 {
 	/// <summary>
 	/// Represents rule of LSystem

@@ -1,8 +1,7 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 
-namespace LSystems
+namespace LSystems.Core
 {
 	/// <summary>
 	/// Grups info about all modules inside one generation and it's age

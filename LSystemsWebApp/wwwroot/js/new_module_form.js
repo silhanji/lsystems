@@ -14,6 +14,7 @@ document.getElementById("add-param-button")
         input.name = 'param-name';
         var button = document.createElement('button');
         button.addEventListener('click', function() {remove_parent(button)});
+        button.className = 'flat-button';
         var image = document.createElement('img');
         image.src = '/svg/clear.svg';
         button.appendChild(image);

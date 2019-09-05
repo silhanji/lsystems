@@ -1,6 +1,6 @@
-using LSystems.Parsers;
 using NUnit.Framework;
 using System.Collections.Generic;
+using LSystems.Utils.Parsers;
 
 namespace LSystemsTests.ParsersTests
 {
