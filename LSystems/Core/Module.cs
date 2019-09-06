@@ -56,11 +56,13 @@ namespace LSystems.Core
 
 		public static bool operator ==(Module<T> m1, Module<T> m2)
 		{
+			if (m1 == null) return false;
 			return m1.Equals(m2);
 		}
 
 		public static bool operator !=(Module<T> m1, Module<T> m2)
 		{
+			if (m1 == null) return false;
 			return !m1.Equals(m2);
 		}
 	}

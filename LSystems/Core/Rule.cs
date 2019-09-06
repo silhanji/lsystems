@@ -24,8 +24,8 @@ namespace LSystems.Core
 		private readonly ContextCondition[] _contextConditions;
 		private readonly ModuleFactory<T>[] _nextGenerationFactories;
 
-		public Rule(int sourceId, ModuleFactory<T>[] nextGenerationFactories, ParamCondition[] paramConditions, 
-			ContextCondition[] contextConditions)
+		public Rule(int sourceId, ModuleFactory<T>[] nextGenerationFactories, ParamCondition[] paramConditions = null, 
+			ContextCondition[] contextConditions = null)
 		{
 			_sourceId = sourceId;
 			_nextGenerationFactories = nextGenerationFactories ?? new ModuleFactory<T>[0]; //TODO: Consider throwing exception here
