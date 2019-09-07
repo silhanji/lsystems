@@ -29,7 +29,6 @@
                 <th>Left context</th>
                 <th>Source module</th>
                 <th>Right context</th>
-                <th>Parametric conditions</th>
                 <th>Next generation</th>
                 <th></th>
             </tr>
@@ -46,14 +45,6 @@
                     <td>
                         @Model.BuildContextDescription(info.RightContext)
                     </td>
-                    @if (info.ParametricConditions != null)
-                    {
-                        <td>@info.ParametricConditions.ToString()</td>
-                    }
-                    else
-                    {
-                        <td></td>
-                    }
                     <td>
                         @Model.BuildNextGenDescription(info.NextGeneration)
                     </td>
@@ -71,7 +62,7 @@
     }
 </div>
 <form method="post">
-    <button type="submit" asp-page-handler="CreateRule">Add new rule"</button>
+    <button type="submit" asp-page-handler="CreateRule">Add new rule</button>
 </form>
 
 @if (Model.DisplayEditor)

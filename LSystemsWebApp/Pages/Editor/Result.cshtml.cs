@@ -99,6 +99,12 @@ namespace LSystemsWebApp.Pages.Editor
 			generator.AdvanceNGenerations(GenerationsCount);
 			var output = generator.CurrentGeneration;
 
+			if (output.Count > 1000000)
+			{
+				ErrorMsg = "Resulting image is too complex, please try reducing number of generations";
+				return;
+			}
+			
 			DrawingAction[] elements = CreateDrawingActions(generatorParser.ModuleParser);
 			
 			var creator = new VectorDrawer(elements);

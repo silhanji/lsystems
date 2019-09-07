@@ -267,3 +267,75 @@ Result Section
     color: red;
     font-weight: bold;
 }
+
+/*
+Index Section
+ */
+#index-content {
+    min-height: 100vh;
+    min-width: 100vw;
+    padding: 25vh 10vw;
+    background-color: #f2f2f2;
+}
+
+#index-content .card {
+    width: 20vw;
+    height: 50vh;
+    display: inline-block;
+    margin: 0 2.5vw;
+    text-align: center;
+    float: left;
+}
+
+#index-content .card img {
+    width: 128px;
+    height: 128px;
+    margin: 32px 0;
+}
+
+#index-content a {
+    display: block;
+    color: #0000e8;
+    width: 100%;
+    text-align: left;
+    padding: 0 32px;
+}
+
+#index-content a:hover {
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+/*
+Tutorial Section
+ */
+
+#tutorial-content {
+    min-width: 100vw;
+    min-height: 100vh;
+    background-color: #f2f2f2;
+    padding: 64px 20vw;
+}
+
+#tutorial-content img {
+    width: 100%;
+    height: auto;
+    margin: 16px 0;
+    border: 1px solid black;
+}
+
+#tutorial-content p {
+    font-size: 2ex;
+    line-height: 2rem;
+}
+
+#tutorial-content a {
+    color: #0000e8;
+    width: 100%;
+    text-align: left;
+}
+
+#tutorial-content h2 {
+    font-size: 3ex;
+    font-style: normal;
+}

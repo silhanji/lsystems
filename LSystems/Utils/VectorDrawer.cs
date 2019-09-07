@@ -386,6 +386,13 @@ namespace LSystems.Utils
 			int green = (int)_green.GetCanvasProperty(module);
 			int blue = (int)_blue.GetCanvasProperty(module);
 
+			if (red < 0) red = 0;
+			if (red > 255) red = 255;
+			if (green < 0) green = 0;
+			if (green > 255) green = 255;
+			if (blue < 0) blue = 0;
+			if (blue > 255) blue = 255;
+			
 			string redS = red.ToString("X");
 			if (redS.Length == 1)
 				redS = "0" + redS;

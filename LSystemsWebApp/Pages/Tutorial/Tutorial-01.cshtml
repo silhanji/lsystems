@@ -1,0 +1,115 @@
+@page
+@{
+    Layout = "Shared/_TutorialLayout";
+}
+
+<h1>
+    The Basics
+</h1>
+<p>
+    This tool will let you use LSystems to create cool images. Don't worry if you don't know what LSystems are, it is 
+    not necessary for use of this tool. In this first tutorial we will cover the basics of this tool and create this 
+    image of tree:
+</p>
+<img src="/img/tutorial_01_1.png" alt="Image we will create"/>
+<p>
+    How are these images created? Everything is based on creating <b>modules</b> and <b>rules</b> which are later 
+    applied over these modules. What are these, so called, modules? You can think about them as actions needed to draw 
+    some image. The tool reads all modules you have inputted and transforms them into image. 
+</p>
+<p>
+    One module we will definitely need is a module which will draw a line, as the picture above is all created of lines. 
+    When you first open the editor, you will be at the modules screen:
+</p>
+<img src="/img/tutorial_01_2.png" alt="Modules screen"/>
+<p>
+    To create new module just click on the blue button. In the form that showed on the screen you just have to input 
+    name of your new module. You could name whatever you like, for example <i>line</i>, but it is usually better idea to name it 
+    after part of the image the module is going to represent. Our module is going to represent branch so 
+    let's name it <i>Branch</i>. You don't need to worry about parameters stuff yet, but you should change the representation
+    to <i>Line</i> and fill in the length. You should not think about length as 1 centimeter or 1 inch but more in relative
+    terms. If something has length 2 it will be twice as large as something with length 1. How much is this 1 or 2 will
+    be decided later based on size of your screen. If you want you can also change the color of the line. Then click on
+    the <i>Create</i> button.
+</p>
+<img src="/img/tutorial_01_3.png" alt="New module form"/>
+<p>
+    Now let's create another module. We will also need to rotate the lines. To do so we will create new module and name
+    it <i>Left</i>. As representation we will select rotation and set the angle to <b>45</b> degrees. In similar way we will 
+    create rotation to right, just change the angle to <b>-45</b> degrees.
+</p>
+<p>
+    You have maybe noticed that in the image, branches end with green part. To do so, we will need new module that will 
+    draw line of the same length as the <i>Branch</i> module, but with green color. Create module <i>Leaf</i> which is represented as 
+    line and set green part of color to something like 150. 
+</p>
+<p>
+    Now we need to create two modules which will tell the tool where to draw next line. The first one will be called 
+    <i>Store</i> and it representation will be <i>Save position on stack</i>. What that means? When the tool reads this module
+    it saves current position and orientation for later use. The other one will be called <i>Load</i> and its representation
+    will be <i>Load position from stack</i> and it basically means that the tool will jump into last saved position and 
+    continue drawing from there. After all of this your modules section should look like this:
+</p>
+<img src="/img/tutorial_01_4.png" alt="Modules screen"/>
+<p>
+    Now let's move to the Axiom part, by clicking on the Axiom link in the sidebar of the editor.
+</p>
+<h2>Axiom</h2>
+<p>
+    Axiom is basically description how your image looks. In the blue box are present all modules you have created. By
+    dragging them into the green box you will create image from them. Lets drag one <i>Leaf</i> from blue box into the green 
+    box and save the changes.
+</p>
+<img src="/img/tutorial_01_5.png" alt="Axiom screen"/>
+<p>
+    Now let's jump into Result screen for a moment. You should see one green line or maybe a box (depending on length you
+    choose)
+</p>
+<img src="/img/tutorial_01_6.png" alt="Result screen"/>
+<p>
+    Well that was a lot of work just to get one line drawn. But don't worry, everything will get much quicker from here.
+    Lets look into the Rules screen.
+</p>
+<h2>Rules</h2>
+<p>
+    You can think of rules as creating images from other images. This tool will generate image you have defined in axiom
+    screen and then apply rules over it. And then again. And again. You can choose how many times the rules are going to 
+    be applied, but about that later.
+</p>
+<p>
+    Lets create new rule. Source module determines which rule will be applied. When image is generated, the tool goes 
+    over it, and when it finds corresponding module, replaces it with other modules. Lets choose <i>Branch</i> as our 
+    source module and drag two other <i>Branch</i> modules from the blue box to the green box. Don't worry about 
+    <i>Advanced Options</i> and click on <i>Add rule</i>. We have now created rule that will transform one branch into 
+    two branches which are directly one after other.
+</p>
+<p>
+    Now let's create second rule. Select <i>Leaf</i> as source module and drag modules from the blue box to correspond
+    to this image:
+</p>
+<img src="/img/tutorial_01_7.png" alt="Branch Store Left Leaf Load Right Leaf Load Branch Leaf"/>
+<p>
+    Now just click on <i>Add rule</i>. What does the rule we have just created means? Well it tells to replace any 
+    <i>Leaf</i> with Branch, then turn Left and draw Leaf, return to trunk, turn right and draw another leaf, and return
+    to trunk again and draw one more branch ended with leaf. It may seem complex at first but it really isn't.
+</p>
+<p>
+    Now just switch to <i>Result screen again</i>. You should see this image:
+</p>
+<img src="/img/tutorial_01_8.png" alt="Result screen"/>
+<p>
+    It looks almost as the image that was promised. You can decide how many times the rules are applied by the number in
+    <i>Generations number</i> form. If you change it to 0 you should get old green line/box. When it is set to 5, it 
+    means the rules were applied 5 times. To get the image from beginning of this tutorial set the number to 7.
+</p>
+<p>
+    You can also try changing the number in <i>Percent randomization</i> form. If you set it to 20 it basically means
+    that every time some rotation or line is found the angle or length is randomized by 20%.    
+</p>
+<p>
+    <i>
+        Note that if you change number of generations to something large, image becomes to complex to be drawn on the
+        screen. This complexity is often not neccessary and can be prevented by using parameters, which you will learn
+        in next tutorial.
+    </i>
+</p>

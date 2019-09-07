@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - LSystemsWebApp</title>
+    <title>@ViewData["Title"]</title>
 
     <environment include="Development">
         <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css" />
@@ -18,8 +18,11 @@
     <link rel="stylesheet" href="~/css/site.css" />
 </head>
 <body>
-<div id="index-content">
-    @RenderBody()
+<div id="tutorial-content">
+    <div class="card">
+        @RenderBody()
+        <a asp-page="/Index">Back to home page</a>
+    </div>
 </div>
 
 <environment include="Development">

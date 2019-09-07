@@ -5,20 +5,22 @@
     ViewData["Title"] = "Home page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    @Html.Raw(Model.Svg)<br/>
-    Form data: @Model.Text<br/>
-    Was posted before: @HttpContext.Session.GetString("postinfo")
-    <form method="post">
-        <input type="text" name="test-input"/>
-        <input type="text" name="form-id" value="form1" hidden/>
-        <input type="text" name="form-id" value="form12" hidden/>
-        <button asp-page-handler="SubmitOne">Submit</button>
-    </form>
-    <form method="post">
-        <input type="text" name="test-input"/>
-        <input type="text" name="form-id" value="form2" hidden/>
-        <button asp-page-handler="SubmitTwo">Submit</button>
-    </form>
+<div class="card">
+    <h1>Editor</h1>
+    <img src="/svg/editor.svg"/>
+    <a asp-page="Editor/Modules"><button>Launch Editor</button></a>
+</div>
+<div class="card">
+    <h1>Tutorials</h1>
+    <img src="/svg/tutorial.svg" />
+    <a asp-page="Tutorial/Tutorial-01">1. First tutorial</a><br/>
+    <a>2. Second tutorial</a><br/>
+    <a>3. ...</a><br/>
+    <br/>
+    <a>Documentation (PDF)</a>
+</div>
+<div class="card">
+    <h1>Sources</h1>
+    <img src="/svg/code.svg"/>
+    <a href="https://github.com/silhanji/lsystems"><button>View code on Github</button></a>
 </div>
