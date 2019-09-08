@@ -15,7 +15,9 @@
 <p>
     How are these images created? Everything is based on creating <b>modules</b> and <b>rules</b> which are later 
     applied over these modules. What are these, so called, modules? You can think about them as actions needed to draw 
-    some image. The tool reads all modules you have inputted and transforms them into image. 
+    some image. The tool reads all modules you have inputted and transforms them into image. You can imagine this 
+    process as if you were drawing with a pen, following orders given to you by someone else. You just read these orders
+    and move your pen accordingly.
 </p>
 <p>
     One module we will definitely need is a module which will draw a line, as the picture above is all created of lines. 
@@ -40,15 +42,18 @@
 </p>
 <p>
     You have maybe noticed that in the image, branches end with green part. To do so, we will need new module that will 
-    draw line of the same length as the <i>Branch</i> module, but with green color. Create module <i>Leaf</i> which is represented as 
-    line and set green part of color to something like 150. 
+    draw line of the same length as the <i>Branch</i> module, but with green color. Create module <i>Leaf</i>, which is represented as 
+    a line, and set green part of color to something like 150. 
 </p>
 <p>
-    Now we need to create two modules which will tell the tool where to draw next line. The first one will be called 
-    <i>Store</i> and it representation will be <i>Save position on stack</i>. What that means? When the tool reads this module
-    it saves current position and orientation for later use. The other one will be called <i>Load</i> and its representation
+    To explain how these modules will be drawn 
+</p>
+<p>
+    Now we need to create two modules that will tell the tool where to draw next line. The first one will be called 
+    <i>Store</i> and its representation will be <i>Save position on stack</i>. What that means? When the tool reads this module
+    it saves current position and orientation of the imaginary pen for later use. The other one will be called <i>Load</i> and its representation
     will be <i>Load position from stack</i> and it basically means that the tool will jump into last saved position and 
-    continue drawing from there. After all of this your modules section should look like this:
+    continue drawing from there. After all of this, your modules section should look like this:
 </p>
 <img src="/img/tutorial_01_4.png" alt="Modules screen"/>
 <p>
