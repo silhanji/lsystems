@@ -34,7 +34,7 @@ namespace LSystems.Utils
 			{
 				bool actionExists = _elements.TryGetValue(modules[i].Id, out var action);
 				if(!actionExists)
-					continue; //TODO: Change to throw exception here?
+					continue;
 
 				_canvas.SetModule(modules[i]);
 				action(_canvas);
@@ -82,7 +82,7 @@ namespace LSystems.Utils
 		
 		public Canvas()
 		{
-			_random = new Random(); //TODO: Add seed ability
+			_random = new Random(); //TODO: Add seed param
 
 			_isRandomized = false;
 			_randomDerivationLimit = 0;
@@ -141,7 +141,6 @@ namespace LSystems.Utils
 			double distance = move.Distance.GetCanvasProperty(_currentModule);
 			_currentPosition = CalcPosition(distance);
 			
-			//TODO: Consider closing path here
 			if (_isPathBuilt)
 			{
 				_pathBuilder.Append("M ");
@@ -264,7 +263,7 @@ namespace LSystems.Utils
 		
 		private void ClosePath()
 		{
-			//TODO: Use @ strings
+			//TODO: Use $ strings
 			_pathBuilder.Append("\" stroke=\"");
 			_pathBuilder.Append(_currentPathSegment.FgColor.GetColor(_currentModule));
 			_pathBuilder.Append("\" stroke-width=\"");

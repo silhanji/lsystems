@@ -48,10 +48,9 @@ namespace LSystems.Core
 			return false;
 		}
 
-		//TODO: Consider different implementation
 		public override int GetHashCode()
 		{
-			return base.GetHashCode();
+			return Id;
 		}
 
 		public static bool operator ==(Module<T> m1, Module<T> m2)

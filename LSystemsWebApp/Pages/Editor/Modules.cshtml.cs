@@ -239,12 +239,7 @@ namespace LSystemsWebApp.Pages.Editor
 			RemoveObsoleteRules(info);
 			UpdateSessionAll();
 		}
-
-		public void OnPostEditModule()
-		{
-			//TODO:
-		}
-
+		
 		private bool CheckForConflict(ModuleInfo info)
 		{
 			string name = info.ModuleName.ToLower();

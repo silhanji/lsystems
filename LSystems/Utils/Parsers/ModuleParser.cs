@@ -20,7 +20,6 @@ namespace LSystems.Utils.Parsers
 			_nextModuleId = 0;
 		}
 
-		//TODO: Test
 		/// <summary>
 		/// Creates module factories for modules represented in given string
 		/// </summary>
@@ -60,7 +59,6 @@ namespace LSystems.Utils.Parsers
 			return result;
 		}
 
-		//TODO: Test
 		/// <summary>
 		/// Creates modules from string representation. Modules can have only literal paramaters
 		/// (no variables, or expressions)

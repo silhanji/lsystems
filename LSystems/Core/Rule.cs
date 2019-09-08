@@ -28,7 +28,7 @@ namespace LSystems.Core
 			ContextCondition[] contextConditions = null)
 		{
 			_sourceId = sourceId;
-			_nextGenerationFactories = nextGenerationFactories ?? new ModuleFactory<T>[0]; //TODO: Consider throwing exception here
+			_nextGenerationFactories = nextGenerationFactories ?? new ModuleFactory<T>[0];
 			_paramConditions = paramConditions ?? new ParamCondition[0];
 			_contextConditions = contextConditions ?? new ContextCondition[0];
 		}
