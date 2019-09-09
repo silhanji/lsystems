@@ -1,0 +1,58 @@
+@page
+@{
+    Layout = "Shared/_TutorialLayout";
+}
+
+<h1>Polygons</h1>
+<p>
+    Up to this point we were drawing only lines. In this part we will lear how to draw polygons. In the end we will 
+    create image of leaf:
+</p>
+<img src="/img/tutorial_03_1.png" alt="Leaf"/>
+<p>
+    To create polygons you need at least three modules. One module will describe the colors of polygon, one will add 
+    points to polygon and the last will draw the polygon on the screen.
+</p>
+<p>
+    But first lets create other modules we will need. We will need modules for saving and loading positions, and modules
+    for rotation by 10 degrees in both directions. Than we will need two modules without representation, let's call
+    them <i>Left</i> and <i>Right</i>. These will denote if we are drawing left or right part of leaf. The last non
+    polygon module will be moving foreward based on it's only parameter. We will call it <i>F</i> and its only parameter
+    will be called <i>x</i>. You should end with something like this:
+</p>
+<img src="/img/tutorial_03_2.png" alt="Basic modules"/>
+<p>
+    Now we need modules denoting polygons. Lets create module called <i>Start polygon</i> and change representation to
+    <i>Polygon</i>. Leave <i>Polygon action</i> as <i>Create</i> and change <i>Fill color</i> to R: 0, G: 175, B: 0.
+    That's all needed for starting polygon.
+</p>
+<p>
+    Now create module with name <i>Add point</i> and change its representation to <i>Polygon</i>. Change 
+    <i>Polygon action</i> to <i>Add current point to polygon</i>.
+</p>
+<p>
+    Last module related to polygons will be named <i>Draw polygon</i>. Change its representation to <i>Polygon</i> and
+    <i>Polygon action</i> to <i>Close polygon</i>. You should end up with these modules:
+</p>
+<img src="/img/tutorial_03_3.png" alt="All needed modules"/>
+<p>
+    Set your axiom to be same as on the following image:
+</p>
+<img src="/img/tutorial_03_4.png" alt="Axiom"/>
+<p>
+    Now we need to create rules to draw left and right side of the leaf. Let's start with Left. Select <i>Left</i> as
+    source module. Than drag modules into the blue box to correspond to following image:
+</p>
+<img src="/img/tutorial_03_5.png" alt="Left side rule"/>
+<p>
+    We will do the same for the right side, just mirror the rotation.
+</p>
+<img src="/img/turotial_03_6.png" alt="Right side rule"/>
+<p>
+    Last rule we need to change is to make moves larger for older modules. Let's create rule with source module <i>F</i>
+    and next generation that looks like this:
+</p>
+<img src="/img/tutorial_03_7.png" alt="Prolonging move rule"/>
+<p>
+    Now it is time to look at the result. Change <i>Generations number</i> to 20 and your leaf is done.
+</p>
