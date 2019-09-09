@@ -1,0 +1,53 @@
+@page
+@{
+    Layout = "Shared/_TutorialLayout";
+}
+
+<h1>Parameters</h1>
+<p>
+    In this part of the tutorial, we will cover parameters. This part assumes you have learned <i>The Basics</i>. The
+    goal of this part will be to create H-Tree:
+</p>
+<img src="/img/tutorial_02_1.png" alt="H-Tree"/>
+<p>
+    First let't create modules for rotation and saving/loading position. This process is same as the one covered in 
+    previous part, so we will not describe it into detail. Only change is that instead of 45 degrees this time we will
+    rotate by 85 degrees. You should get modules equivalent to those on following image:
+</p>
+<img src="/img/tutorial_02_2.png" alt="Basic modules"/>
+<p>
+    Now the new stuff. Create new module and name it <i>H</i>. Now click on <i>Add parameter</i>. In the newly created
+    form fill in the name of the paramenter. Let's call it <i>x</i>. Now change the representation to <i>Line</i>. This
+    time instead of filling in number in <i>Length</i> form, fill in <i>x</i>. Now every time this module will be drawn
+    length will be determined by parameter associated with the module.
+</p>
+<p>
+    Let's create another module <i>F</i>. Add parameter to it and name it <i>y</i>. Change representation to <i>Line</i>
+    and fill in <i>y</i> as length.
+</p>
+<h2>Axiom</h2>
+<p>
+    In the axiom screen you can see that modules <i>H</i> and <i>F</i> have form associated with them. Value in this form
+    will be used as initial value for the module. Now drag one <i>F</i> module into the blue box and fill in <i>200</i> 
+    as initial value for parameter <i>y</i>. Save it.
+</p>
+<img src="/img/tutorial_02_3.png" alt="Axiom screen"/>
+<h2>Rules</h2>
+<p>
+    To generate H-Tree you need only one rule. As source module choose <i>F</i>. Now drag modules into the blue box to 
+    correspond with following image:
+</p>
+<img src="/img/tutorial_02_4.png" alt="H(y)[+F(y*0.69)][-F(y*0.69)]"/>
+<p>
+    You can see that modules here also have forms associated with them. You can fill in number or mathematical 
+    expression. As you can see in the image you can also use variable names in the expressions. Note that you can only
+    use variables which are associated with source module.
+</p>
+<p>
+    In this example, the rule on the image will transform one <i>F</i> module which has some value set in parameter <i>y</i> 
+    into one module <i>H</i> and set value of parameter <i>x</i> to the value of parameter <i>y</i>. Than it will create
+    two <i>F</i> modules and set their parameters <i>y</i> to 0.69 times value of <i>y</i> associated with source module.
+</p>
+<p>
+    Now save the changes and move to thr result page. You should see image corresponding to first image on this page.
+</p>

@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using System.Xml.Serialization;
 using LSystems;
+using LSystems.Core;
 using LSystems.Utils;
 using LSystems.Utils.Parsers;
 using Microsoft.AspNetCore.Http;
@@ -80,6 +81,7 @@ namespace LSystemsWebApp.Pages.Editor
 				return;
 			}
 			
+			
 			var expressionParserFactory = new DoubleExpressionParserFactory();
 			var sqrt = new Function<double>("sqrt",
 				expressions => { return (parameters => Math.Sqrt(expressions[0](parameters)));});
@@ -93,8 +95,17 @@ namespace LSystemsWebApp.Pages.Editor
 
 			var input = builder.ToString();
 
+			Generator<double> generator;
 			var reader = new StringReader(input);
-			var generator = generatorParser.Parse(reader);
+			try
+			{
+				generator = generatorParser.Parse(reader);
+			}
+			catch (ParserException)
+			{
+				ErrorMsg = "Error while processing your input. Please check if all rules are correct";
+				return;
+			}
 
 			generator.AdvanceNGenerations(GenerationsCount);
 			var output = generator.CurrentGeneration;
@@ -105,18 +116,35 @@ namespace LSystemsWebApp.Pages.Editor
 				return;
 			}
 			
-			DrawingAction[] elements = CreateDrawingActions(generatorParser.ModuleParser);
+			DrawingAction[] elements;
+			try
+			{
+				elements = CreateDrawingActions(generatorParser.ModuleParser);
+			}
+			catch (ArgumentException)
+			{
+				ErrorMsg = "You have mistake in modules definition! Please revise them"; 
+				return;
+			}
 			
 			var creator = new VectorDrawer(elements);
 
-			if (RandomizationPercent != 0)
+			try
 			{
-				double randomFactor = ((double) RandomizationPercent) / 100;
-				Svg = creator.Draw(output, randomFactor);
+				if (RandomizationPercent != 0)
+				{
+					double randomFactor = ((double) RandomizationPercent) / 100;
+					Svg = creator.Draw(output, randomFactor);
+				}
+				else
+				{
+					Svg = creator.Draw(output);
+				}
 			}
-			else
+			catch (Exception)
 			{
-				Svg = creator.Draw(output);
+				ErrorMsg = "Internal error while drawing your image";
+				return;
 			}
 		}
 
