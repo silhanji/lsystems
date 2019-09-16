@@ -240,9 +240,20 @@ namespace LSystems.Utils.Parsers
 			var tokenizer = new Tokenizer(_registredIdentifiers);
 			var tokens = tokenizer.Tokenize(input);
 
-			return ParseBinaryOperator(tokens, _minPriority, 0, tokens.Length);
+			return ParseBinaryOperator(tokens,0, tokens.Length);
 		}
 
+		/// <summary>
+		/// Method calling ParseBinaryOperator with _minPriority. Should be called instead the other it the call is not
+		/// recursive..
+		/// </summary>
+		/// <param name="tokens">Array of tokens which forms entire expression</param>
+		/// <param name="first">Index of first token searched for binary operator</param>
+		/// <param name="afterLast">Index of token directly after last token meant to be searched</param>
+		/// <returns>Expression which returns value of parsed BinaryOperator</returns>
+		private Expression<T> ParseBinaryOperator(Token[] tokens, int first, int afterLast) =>
+			ParseBinaryOperator(tokens, _minPriority, first, afterLast);
+		
 		/// <summary>
 		/// Method parsing binary operator if some is present, or calling ParseUnaryOperator if none binary operator
 		/// is found.
@@ -251,17 +262,17 @@ namespace LSystems.Utils.Parsers
 		/// <param name="priority">Priority of currently parsed binary operator, method won't parse binary operators
 		/// with different priority</param>
 		/// <param name="first">Index of first token to search for BinaryOperator</param>
-		/// <param name="count">Number of tokens which can be searched for BinaryOperator</param>
+		/// <param name="afterLast">Index of token directly after last token meant to be searched</param>
 		/// <returns>Expression which returns value of parsed BinaryOperator</returns>
 		/// <seealso cref="Token"/>
 		/// <seealso cref="Tokenizer"/>
-		private Expression<T> ParseBinaryOperator(Token[] tokens, int priority, int first, int count)
+		private Expression<T> ParseBinaryOperator(Token[] tokens, int priority, int first, int afterLast)
 		{
 			if (priority > _maxPriority)
-				return ParseUnaryOperator(tokens, first, count); //No oher binary operator can exists
+				return ParseUnaryOperator(tokens, first, afterLast); //No oher binary operator can exists
 
 			int bracketDepth = 0;
-			for (int i = first; i < first + count; i++)
+			for (int i = first; i < afterLast; i++)
 			{
 				if (tokens[i].Type == Token.TokenType.Control)
 				{
@@ -269,23 +280,24 @@ namespace LSystems.Utils.Parsers
 						bracketDepth++;
 					else if (tokens[i].Value == ")")
 						bracketDepth--;
-				} else if (tokens[i].Type == Token.TokenType.Identifier 
+				} 
+				else if (tokens[i].Type == Token.TokenType.Identifier 
 				           && bracketDepth == 0	//Is not nested
 				           && i != first	//Has left argument
-				           && i != first + count - 1	//Has right argument
+				           && i != afterLast - 1	//Has right argument
 				           && _binaryOperators.TryGetValue(tokens[i].Value, out var op) //Corresponds to some BinaryOperator
 				           && op.Priority == priority)	//Has requested priority
 				{
 					//Parse left argument, it is sure that if some BinaryOperator is on left side, it must have priority
 					//higher than current operator
-					var leftSide = ParseBinaryOperator(tokens, priority + 1, first, (i - first));
-					var rightSide = ParseBinaryOperator(tokens, priority, i + 1, count - i -1 + first);
+					var leftSide = ParseBinaryOperator(tokens, priority + 1, first, i);
+					var rightSide = ParseBinaryOperator(tokens, priority, i + 1, afterLast);
 					return op.Handler(leftSide, rightSide);
 				}
 			}
 
 			//Parse binary operators with higher priority
-			return ParseBinaryOperator(tokens, priority + 1, first, count); //TODO: Replace with loop and managed recursion
+			return ParseBinaryOperator(tokens, priority + 1, first, afterLast);
 		}
 
 		/// <summary>
@@ -293,96 +305,125 @@ namespace LSystems.Utils.Parsers
 		/// </summary>
 		/// <param name="tokens">Array of tokens which corresponds to entire expression</param>
 		/// <param name="first">Index of tokens which should contain UnaryOperator</param>
-		/// <param name="count">Number of tokens used in evaluation of argument of UnaryOperator</param>
+		/// <param name="afterLast">Index of token directly after last token meant to be searched</param>
 		/// <returns>Expression which returns value of parsed UnaryOperator</returns>
 		/// <seealso cref="Token"/>
 		/// <seealso cref="Tokenizer"/>
-		private Expression<T> ParseUnaryOperator(Token[] tokens, int first, int count)
+		private Expression<T> ParseUnaryOperator(Token[] tokens, int first, int afterLast)
 		{
 			if (tokens[first].Type == Token.TokenType.Identifier
 			    && _unaryOperators.TryGetValue(tokens[first].Value, out var op))
 			{
-				var argument = ParseIdentifier(tokens, first + 1, count - 1);
-				return op.Handler(argument);
+				var rightSide = ParseBracket(tokens, first + 1, afterLast);
+				return op.Handler(rightSide);
 			}
 
-			return ParseIdentifier(tokens, first, count);
+			return ParseBracket(tokens, first, afterLast);
 		}
 
 		/// <summary>
-		/// Method parsing everything which is not operator
+		/// Method for parsing bracket and its content
 		/// </summary>
 		/// <param name="tokens">Array of Tokens which corresponds to entire expression</param>
 		/// <param name="first">Index of first Token to be evaluated</param>
-		/// <param name="count">Number of tokens to be evaluated</param>
-		/// <returns>Expression which returns value of parsed Identifier</returns>
+		/// <param name="afterLast">Index of token directly after last token meant to be searched</param>
+		/// <returns>Expression which returns value of parsed bracket</returns>
 		/// <exception cref="ParserException">Thrown if Tokens can be parsed into expression (e.g. unknown identifiers,
 		/// missing arguments, ...)</exception>
 		/// <seealso cref="Token"/>
 		/// <seealso cref="Tokenizer"/>
-		private Expression<T> ParseIdentifier(Token[] tokens, int first, int count)
+		private Expression<T> ParseBracket(Token[] tokens, int first, int afterLast)
 		{
 			if (tokens[first].Type == Token.TokenType.Control && tokens[first].Value == "(" &&
-			    tokens[first + count - 1].Type == Token.TokenType.Control && tokens[first + count - 1].Value == ")")
+			    tokens[afterLast - 1].Type == Token.TokenType.Control && tokens[afterLast - 1].Value == ")")
 			{
-				//Bracket can contain anything
-				return ParseBinaryOperator(tokens, _minPriority, first + 1, count - 2); 
+				//Bracket can contain anything, start parsing from top again
+				return ParseBinaryOperator(tokens,first + 1, afterLast - 1); 
 			} 
-			else if (tokens[first].Type == Token.TokenType.Identifier)
-			{
-				if (count == 1 && _variables.TryGetValue(tokens[first].Value, out var variable)) //Token is variable
-				{
-					return args => args[variable.Index];
-				} 
-				else if (_functions.TryGetValue(tokens[first].Value, out var function) //Token is function
-				         && tokens[first+1].Value == "("
-				         && tokens[first+count-1].Value == ")")
-				{
-					var arguments = new List<Expression<T>>();
-					int bracketDepth = 0;
-					first += 2;
-					int argStart = first;
-					for(int i = first; i - first < count-3; i++)
-					{
-						if (tokens[i].Type == Token.TokenType.Control)
-						{
-							switch (tokens[i].Value)
-							{
-								case "(":
-									bracketDepth++;
-									break;
-								case ")":
-									bracketDepth--;
-									break;
-								case ",":
-									if (bracketDepth == 0)
-									{
-										var argument = ParseBinaryOperator(tokens, _minPriority, argStart, i - argStart);
-										argStart = i + 1;
-										arguments.Add(argument);
-									}
-
-									break;
-								default:
-									throw new ParserException("Unknown token: " + tokens[i].Value);
-							}
-						}
-					}
-
-					var lastArgument = ParseBinaryOperator(tokens, _minPriority, argStart, count - 3 - argStart+first);
-					arguments.Add(lastArgument);
-
-					return function.Handler(arguments.ToArray());
-				}
-			} else if (tokens[first].Type == Token.TokenType.Literal && count == 1) //Token is literal
-			{
+			
+			if (tokens[first].Type == Token.TokenType.Identifier)
+				return ParseIdentifier(tokens, first, afterLast);
+			
+			if (tokens[first].Type == Token.TokenType.Literal && (afterLast - first) == 1)
 				return ParseLiteral(tokens[first]);
-			}
 			
 			//Token is not identifier or literal
-			throw new ParserException("Unable to parse " + count + " tokens starting at index " + first);
+			throw new ParserException("Unable to parse token at " + first + " unknown token type");
 		}
 
+		/// <summary>
+		/// Method for parsing identifiers
+		/// </summary>
+		/// <param name="tokens">Array of Tokens which corresponds to entire expression</param>
+		/// <param name="first">Index of first Token to be evaluated</param>
+		/// <param name="afterLast">Index of token directly after last token meant to be searched</param>
+		/// <returns>Expression which returns value of parsed Identifier</returns>
+		/// <exception cref="ParserException">Thrown if tokens[first] is not an identifier</exception>
+		private Expression<T> ParseIdentifier(Token[] tokens, int first, int afterLast)
+		{
+			if(tokens[first].Type != Token.TokenType.Identifier)
+				throw new ParserException("Unable to parse token at " + first + ". Token is not identifier");
+
+			if ((afterLast - first) == 1
+			    && _variables.TryGetValue(tokens[first].Value, out var variable))
+				return args => args[variable.Index];
+
+			//If not variable than identifier must identify function
+			return ParseFunction(tokens, first, afterLast);
+		}
+
+		/// <summary>
+		/// Method for parsing functions
+		/// </summary>
+		/// <param name="tokens">Array of Tokens which corresponds to entire expression</param>
+		/// <param name="first">Index of first Token to be evaluated</param>
+		/// <param name="afterLast">Index of token directly after last token meant to be searched</param>
+		/// <returns>Expression which returns value of parsed Function</returns>
+		/// <exception cref="ParserException">Thrown if tokens[first] is not a function, or if brackets delimiting
+		/// arguments are missing</exception>
+		private Expression<T> ParseFunction(Token[] tokens, int first, int afterLast)
+		{
+			if(!_functions.TryGetValue(tokens[first].Value, out var function) ||
+			   tokens[first+1].Value != "(" ||
+			   tokens[afterLast-1].Value != ")")
+				throw new DrawerException("Cannot parse token at " + first + 
+				                          ". Token doesn't correspond to any function");
+			
+			var arguments = new List<Expression<T>>();
+			int bracketDepth = 0;
+			int argStart = first+2; //Determines start index of current argument
+			for(int i = first+2; i < afterLast-1; i++)
+			{
+				if (tokens[i].Type == Token.TokenType.Control)
+				{
+					switch (tokens[i].Value)
+					{
+						case "(":
+							bracketDepth++;
+							break;
+						case ")":
+							bracketDepth--;
+							break;
+						case ",":
+							if (bracketDepth == 0)
+							{
+								var argument = ParseBinaryOperator(tokens,argStart, i);
+								argStart = i + 1;
+								arguments.Add(argument);
+							}
+							break;
+						default:
+							throw new ParserException("Unknown Control token: " + tokens[i].Value);
+					}
+				}
+			}
+
+			var lastArgument = ParseBinaryOperator(tokens,argStart, afterLast-1);
+			arguments.Add(lastArgument);
+
+			return function.Handler(arguments.ToArray());
+		}
+		
 		/// <summary>
 		/// Parses literal from token
 		/// </summary>
